@@ -1,0 +1,54 @@
+api_version = "2026-04"
+
+[[extensions]]
+name = "thank-you-loyalty"
+handle = "thank-you-loyalty"
+type = "ui_extension"
+uid = "f6b4c1ca-3584-2747-cca3-a78ca96a744b17d53dc3"
+
+[[extensions.targeting]]
+module = "./src/index.jsx"
+target = "purchase.thank-you.block.render"
+
+[extensions.capabilities]
+api_access = true
+network_access = true
+
+[[extensions.metafields]]
+namespace = "$app"
+key = "requestedFreeGift"
+
+[[extensions.settings.fields]]
+key = "loyalty_heading"
+type = "single_line_text_field"
+name = "Loyalty Heading"
+default = "Earn rewards on every order"
+[[extensions.settings.fields.validations]]
+name = "max"
+value = "60"
+
+[[extensions.settings.fields]]
+key = "loyalty_text"
+type = "multi_line_text_field"
+name = "Loyalty Description"
+default = "Join our loyalty program and start earning points today"
+[[extensions.settings.fields.validations]]
+name = "max"
+value = "160"
+
+[[extensions.settings.fields]]
+key = "loyalty_cta_text"
+type = "single_line_text_field"
+name = "Loyalty CTA Text"
+default = "Join Now"
+[[extensions.settings.fields.validations]]
+name = "max"
+value = "24"
+
+[[extensions.settings.fields]]
+key = "loyalty_cta_link"
+type = "single_line_text_field"
+name = "Loyalty CTA Link"
+[[extensions.settings.fields.validations]]
+name = "max"
+value = "2048"

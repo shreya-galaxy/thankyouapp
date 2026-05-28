@@ -1,0 +1,19 @@
+api_version = "2026-04"
+
+[[extensions]]
+type = "ui_extension"
+name = "thank-you-upsell"
+handle = "thank-you-upsell"
+uid = "668606a9-da05-e73e-6c99-cf8e980b59ed8c1dcfb8"
+
+[[extensions.targeting]]
+target = "purchase.thank-you.block.render"
+module = "./src/index.jsx"
+
+[extensions.capabilities]
+api_access = true
+network_access = true
+
+[[extensions.metafields]]
+namespace = "$app"
+key = "requestedFreeGift"

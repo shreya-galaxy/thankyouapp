@@ -1,0 +1,28 @@
+api_version = "2026-04"
+
+name = "thank-you-discount"
+type = "ui_extension"
+uid = "b8d84524-0368-11a3-eae7-d5d23b0429c29e362e72"
+
+[[targeting]]
+module = "./src/index.jsx"
+target = "purchase.thank-you.block.render"
+
+[capabilities]
+api_access = true
+network_access = true
+
+[[metafields]]
+namespace = "$app"
+key = "requestedFreeGift"
+
+[settings]
+
+[[settings.fields]]
+key = "discount_code"
+type = "single_line_text_field"
+name = "Discount code"
+description = "Enter discount code to show on Thank You page"
+[[settings.fields.validations]]
+name = "max"
+value = "32"
