@@ -1,5 +1,5 @@
 export const APP_URL =
-  'https://conditioning-matter-obligation-assignments.trycloudflare.com';
+  'https://thankyouapp-production.up.railway.app';
 
 export function apiUrl(path) {
   return `${APP_URL}${path}`;
