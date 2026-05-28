@@ -39,13 +39,13 @@ model SubscriptionClick {
   eventType   String   @default("subscription")
   orderId     String?
   orderNumber String?
-  ctaText     String?
-  ctaLink     String?
+  ctaText     String?  @db.Text
+  ctaLink     String?  @db.Text
   itemId      String?
-  itemTitle   String?
-  itemUrl     String?
+  itemTitle   String?  @db.Text
+  itemUrl     String?  @db.Text
   source      String?
-  payload     String?
+  payload     String?  @db.Text
   createdAt   DateTime @default(now())
 
   @@index([shop, eventType, createdAt])
