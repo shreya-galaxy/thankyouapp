@@ -2,7 +2,7 @@
 
 client_id = "adba87c40b9eb8f83be162d3d6bde96a"
 name = "thankyou-app"
-application_url = "https://example.com"
+application_url = "https://thankyouapp-production.up.railway.app"
 embedded = true
 
 [build]
