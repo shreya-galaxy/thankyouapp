@@ -97,13 +97,7 @@ function Extension() {
 
   return (
     <s-stack gap="base">
-      <s-box padding="base" border="base" borderRadius="base">
-        <s-stack gap="small">
-          <s-text appearance="headingMd">{heading}</s-text>
-          <s-text>{subtitle}</s-text>
-        </s-stack>
-      </s-box>
-
+      
       {loading ? (
         <s-box padding="base" border="base" borderRadius="base">
           <s-text>Loading recommendations...</s-text>
@@ -117,6 +111,13 @@ function Extension() {
           <s-text>No recommendations found</s-text>
         </s-box>
       ) : (
+        <>
+        <s-box padding="base" border="base" borderRadius="base">
+          <s-stack gap="small">
+            <s-text appearance="headingMd">{heading}</s-text>
+            {/* <s-text>{subtitle}</s-text> */}
+          </s-stack>
+        </s-box>
         <s-grid
           gap="base"
           gridTemplateColumns="repeat(auto-fit, minmax(180px, 1fr))"
@@ -162,6 +163,7 @@ function Extension() {
             </s-box>
           ))}
         </s-grid>
+        </>
       )}
     </s-stack>
   );

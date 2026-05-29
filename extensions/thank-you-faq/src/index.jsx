@@ -41,9 +41,9 @@ function Extension() {
       <s-box padding="base" border="base" borderRadius="base">
         <s-stack gap="small">
           <s-text type="strong">Frequently asked questions</s-text>
-          <s-text>
+          {/* <s-text>
             Answer shopper questions without sending them away from the thank-you page.
-          </s-text>
+          </s-text> */}
         </s-stack>
       </s-box>
 
