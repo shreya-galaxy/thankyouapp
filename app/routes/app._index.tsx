@@ -4,6 +4,9 @@ import {authenticate} from "../shopify.server";
 import {boundary} from "@shopify/shopify-app-react-router/server";
 import prisma from "../db.server";
 
+const checkoutCustomizeUrl =
+  "https://admin.shopify.com/store/gwl-apps-demo/settings/checkout";
+
 export const loader = async ({request}: LoaderFunctionArgs) => {
   const {session} = await authenticate.admin(request);
   const shop = session.shop;
@@ -121,7 +124,7 @@ export default function Index() {
         </s-stack>
       </s-section>
 
-      {/* <s-section heading="Dynamic thank-you blocks">
+      <s-section heading="Dynamic thank-you blocks">
         <s-stack direction="block" gap="base">
           <s-box padding="base" borderWidth="base" borderRadius="base">
             <s-stack gap="small">
@@ -154,7 +157,26 @@ export default function Index() {
             </s-stack>
           </s-box>
         </s-stack>
-      </s-section> */}
+      </s-section>
+
+      <s-section heading="Set up thank-you page blocks">
+        <s-stack direction="block" gap="base">
+          <s-paragraph>
+            Add the blocks from this app in Shopify checkout settings,
+            then place and customize them on the thank-you page.
+          </s-paragraph>
+
+          <s-stack direction="inline" gap="small">
+            <s-button
+              variant="primary"
+              href={checkoutCustomizeUrl}
+              target="_blank"
+            >
+              Customize checkout
+            </s-button>
+          </s-stack>
+        </s-stack>
+      </s-section>
 
       <s-section heading="Recent activity">
         {recentClicks.length ? (

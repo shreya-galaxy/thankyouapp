@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>GWL Thank You App - Feature Documentation</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 18mm 16mm;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        color: #202223;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 12px;
+        line-height: 1.45;
+        margin: 0;
+      }
+
+      h1,
+      h2,
+      h3 {
+        color: #111827;
+        margin: 0 0 10px;
+      }
+
+      h1 {
+        font-size: 28px;
+        line-height: 1.15;
+      }
+
+      h2 {
+        border-bottom: 1px solid #d7dce0;
+        font-size: 18px;
+        margin-top: 28px;
+        padding-bottom: 6px;
+      }
+
+      h3 {
+        font-size: 14px;
+        margin-top: 18px;
+      }
+
+      p {
+        margin: 0 0 10px;
+      }
+
+      table {
+        border-collapse: collapse;
+        margin: 10px 0 18px;
+        page-break-inside: avoid;
+        width: 100%;
+      }
+
+      th,
+      td {
+        border: 1px solid #d7dce0;
+        padding: 8px 9px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #f3f4f6;
+        color: #111827;
+        font-weight: 700;
+      }
+
+      .cover {
+        min-height: 245mm;
+        padding-top: 58mm;
+      }
+
+      .cover .brand {
+        color: #4b5563;
+        font-size: 14px;
+        margin-bottom: 22px;
+      }
+
+      .cover .meta {
+        border-left: 4px solid #111827;
+        margin-top: 28px;
+        padding-left: 14px;
+      }
+
+      .subtitle {
+        color: #374151;
+        font-size: 14px;
+        margin-top: 10px;
+      }
+
+      .page-break {
+        page-break-before: always;
+      }
+
+      .note {
+        background: #f8fafc;
+        border: 1px solid #d7dce0;
+        margin: 12px 0 18px;
+        padding: 10px 12px;
+      }
+
+      .tag {
+        border: 1px solid #111827;
+        border-radius: 10px;
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        margin-right: 5px;
+        padding: 1px 6px;
+        text-transform: uppercase;
+      }
+
+      .footer {
+        border-top: 1px solid #d7dce0;
+        color: #6b7280;
+        font-size: 10px;
+        margin-top: 28px;
+        padding-top: 8px;
+      }
+
+      code {
+        background: #f3f4f6;
+        border-radius: 3px;
+        font-family: "Courier New", monospace;
+        padding: 1px 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <section class="cover">
+      <div class="brand">Galaxy Weblinks | 2026</div>
+      <h1>GWL Thank You App<br />Feature Documentation</h1>
+      <p class="subtitle">
+        Platform: Shopify Embedded App | Checkout UI Extensions | Developed by Galaxy Weblinks
+      </p>
+      <div class="meta">
+        <p>
+          This document provides a complete reference for the GWL Thank You App,
+          covering Admin Panel functionality, checkout customization setup,
+          thank-you page extension blocks, click analytics, and QA flows.
+        </p>
+      </div>
+    </section>
+
+    <section class="page-break">
+      <h2>Latest Enhancements</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Enhancement</th>
+            <th>Summary</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="tag">NEW</span>Home Page Checkout Customization CTA</td>
+            <td>
+              App home page includes a primary setup call to action that opens
+              Shopify Admin checkout settings for customizing thank-you page blocks.
+            </td>
+          </tr>
+          <tr>
+            <td><span class="tag">NEW</span>Embedded Analytics Dashboard</td>
+            <td>
+              Merchants can view total clicks, today's clicks, click counts by
+              type, and the most recent tracked interactions.
+            </td>
+          </tr>
+          <tr>
+            <td><span class="tag">NEW</span>Dynamic Product Recommendations</td>
+            <td>
+              Recommended products are pulled from the purchased products'
+              <code>custom.recommended_products</code> metafield and displayed on
+              the thank-you page.
+            </td>
+          </tr>
+          <tr>
+            <td><span class="tag">NEW</span>Multiple Configurable Thank-You Blocks</td>
+            <td>
+              Subscription, loyalty, referral, discount, FAQ, video, and upsell
+              blocks can be added through Shopify checkout customization.
+            </td>
+          </tr>
+          <tr>
+            <td><span class="tag">NEW</span>Server-Side Click Storage</td>
+            <td>
+              Extension interactions are sent to the app API and stored by shop,
+              event type, order, CTA, item, source, and timestamp.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>SECTION A - Admin Panel Features</h2>
+      <h3>1. Dashboard Home</h3>
+      <p>
+        The Dashboard is the app landing page. It gives merchants a quick
+        performance snapshot and a direct path to Shopify checkout customization.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Performance Snapshot</td>
+            <td>
+              Displays Total clicks, Today, and Last 7 days values from tracked
+              thank-you page interactions.
+            </td>
+          </tr>
+          <tr>
+            <td>Recent Activity</td>
+            <td>
+              Shows the latest five click events with date, event type, and the
+              clicked item or CTA text.
+            </td>
+          </tr>
+          <tr>
+            <td>Top Signal</td>
+            <td>
+              Aside panel highlights the most frequent click event type from the
+              last 7 days.
+            </td>
+          </tr>
+          <tr>
+            <td>View Analytics Button</td>
+            <td>
+              Primary action that navigates to the app Analytics page.
+            </td>
+          </tr>
+          <tr>
+            <td><span class="tag">NEW</span>Customize Checkout CTA</td>
+            <td>
+              Opens Shopify Admin checkout settings:
+              <code>https://admin.shopify.com/store/gwl-apps-demo/settings/checkout</code>.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>2. Analytics</h3>
+      <p>
+        The Analytics page provides click reporting across all thank-you page
+        blocks that call the shared tracking helper.
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Total Clicks</td>
+            <td>Counts all tracked click records for the authenticated shop.</td>
+          </tr>
+          <tr>
+            <td>Today Clicks</td>
+            <td>Counts records created since the start of the current day.</td>
+          </tr>
+          <tr>
+            <td>Clicks by Type</td>
+            <td>
+              Groups events such as Subscription Click, Loyalty Click, Referral
+              Click, Video Click, FAQ Click, and Recommended Product Click.
+            </td>
+          </tr>
+          <tr>
+            <td>Recent Clicks Table</td>
+            <td>
+              Lists up to 50 recent clicks with date, type, and an available link
+              to the clicked CTA or product.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>3. Click Tracking API</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Endpoint</td>
+            <td><code>/api/analytics-click</code></td>
+          </tr>
+          <tr>
+            <td>Stored Fields</td>
+            <td>
+              Shop, event type, order ID, order number, CTA text, CTA link, item
+              ID, item title, item URL, source, raw payload, and created date.
+            </td>
+          </tr>
+          <tr>
+            <td>CORS Support</td>
+            <td>
+              Supports extension-side POST and OPTIONS requests with permissive
+              CORS headers.
+            </td>
+          </tr>
+          <tr>
+            <td>Shop Validation</td>
+            <td>
+              Requests must include a shop domain before a click record is saved.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="page-break">
+      <h2>SECTION B - Checkout Customization and Extension Blocks</h2>
+      <p>
+        All customer-facing modules are Shopify Checkout UI Extensions targeting
+        <code>purchase.thank-you.block.render</code>. Merchants add them from
+        Shopify Admin checkout customization; no theme code editing is required.
+      </p>
+
+      <h3>4. Available Thank-You Page Blocks</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Block Name</th>
+            <th>Purpose</th>
+            <th>Customer Interaction</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Thank You - Subscription Section</td>
+            <td>Promotes subscription, membership, or repeat-purchase offers.</td>
+            <td>CTA button opens merchant-configured URL and tracks <code>subscription_click</code>.</td>
+          </tr>
+          <tr>
+            <td>Thank You - Loyalty Section</td>
+            <td>Promotes a loyalty or rewards program after purchase.</td>
+            <td>CTA button opens merchant-configured URL and tracks <code>loyalty_click</code>.</td>
+          </tr>
+          <tr>
+            <td>Thank You - Referral Section</td>
+            <td>Promotes referral incentives such as give/get reward programs.</td>
+            <td>CTA button opens merchant-configured URL and tracks <code>referral_click</code>.</td>
+          </tr>
+          <tr>
+            <td>Thank You - Discount Section</td>
+            <td>Displays a discount code for the customer's next purchase.</td>
+            <td>Customer views the configured discount code on the thank-you page.</td>
+          </tr>
+          <tr>
+            <td>Thank You - FAQ Section</td>
+            <td>Displays up to 10 frequently asked questions and answers.</td>
+            <td>Opening an FAQ answer tracks <code>faq_click</code>.</td>
+          </tr>
+          <tr>
+            <td>Thank You - Video Section</td>
+            <td>Displays a video thumbnail and heading linked to a hosted video.</td>
+            <td>Thumbnail click opens video URL and tracks <code>video_click</code>.</td>
+          </tr>
+          <tr>
+            <td>Thank You - Upsell Section</td>
+            <td>Shows product recommendations based on purchased product metafields.</td>
+            <td>Product image/link click opens product URL and tracks <code>recommended_product_click</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>5. Checkout Customization Setup</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Admin Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Open App</td>
+            <td>Open the GWL Thank You App in Shopify Admin.</td>
+          </tr>
+          <tr>
+            <td>2. Use CTA</td>
+            <td>Click <strong>Customize checkout</strong> from the app home page.</td>
+          </tr>
+          <tr>
+            <td>3. Select Checkout Profile</td>
+            <td>Choose the active checkout profile and open the checkout editor.</td>
+          </tr>
+          <tr>
+            <td>4. Navigate to Thank-You Page</td>
+            <td>Switch the editor view to the thank-you page area.</td>
+          </tr>
+          <tr>
+            <td>5. Add App Blocks</td>
+            <td>Add one or more GWL Thank You blocks from the Apps section.</td>
+          </tr>
+          <tr>
+            <td>6. Configure Settings</td>
+            <td>Enter headings, descriptions, CTA text, CTA URLs, discount code, FAQs, or video URLs as needed.</td>
+          </tr>
+          <tr>
+            <td>7. Save</td>
+            <td>Save the checkout customization and place a test order for validation.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>6. Block Settings Reference</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Block</th>
+            <th>Settings</th>
+            <th>Validation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Subscription</td>
+            <td>Heading 1, Heading 2, CTA Text, CTA Link</td>
+            <td>60, 120, 24, and 2048 character maximums.</td>
+          </tr>
+          <tr>
+            <td>Loyalty</td>
+            <td>Heading, Description, CTA Text, CTA Link</td>
+            <td>60, 160, 24, and 2048 character maximums.</td>
+          </tr>
+          <tr>
+            <td>Referral</td>
+            <td>Heading, Description, CTA Text, CTA Link</td>
+            <td>60, 160, 24, and 2048 character maximums.</td>
+          </tr>
+          <tr>
+            <td>Discount</td>
+            <td>Discount Code</td>
+            <td>32 character maximum.</td>
+          </tr>
+          <tr>
+            <td>FAQ</td>
+            <td>FAQ Question 1-10 and FAQ Answer 1-10</td>
+            <td>Questions: 80 characters. Answers: 240 characters.</td>
+          </tr>
+          <tr>
+            <td>Video</td>
+            <td>Video Heading, Video URL, Video Thumbnail Image</td>
+            <td>60, 2048, and 2048 character maximums.</td>
+          </tr>
+          <tr>
+            <td>Upsell</td>
+            <td>No merchant-facing extension settings.</td>
+            <td>Recommendations come from product metafields.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="page-break">
+      <h2>SECTION C - Customer-Side Experiences</h2>
+      <h3>7. Subscription CTA Flow</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Customer Experience</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Order Complete</td>
+            <td>Customer lands on the thank-you page after checkout.</td>
+          </tr>
+          <tr>
+            <td>2. Offer Visible</td>
+            <td>The configured subscription heading, description, and CTA are displayed.</td>
+          </tr>
+          <tr>
+            <td>3. CTA Click</td>
+            <td>Customer clicks the CTA and opens the configured subscription URL in a new tab.</td>
+          </tr>
+          <tr>
+            <td>4. Tracking</td>
+            <td>The app records event type <code>subscription_click</code> with CTA and order context.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>8. Loyalty and Referral Flow</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Customer Experience</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Block Displayed</td>
+            <td>Customer sees a loyalty or referral promotion on the thank-you page.</td>
+          </tr>
+          <tr>
+            <td>2. CTA Click</td>
+            <td>Customer clicks Join Now, Refer a Friend, or merchant-configured CTA text.</td>
+          </tr>
+          <tr>
+            <td>3. Destination</td>
+            <td>Configured CTA URL opens in a new tab.</td>
+          </tr>
+          <tr>
+            <td>4. Tracking</td>
+            <td>The app records <code>loyalty_click</code> or <code>referral_click</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>9. Discount Code Flow</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Customer Experience</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Block Displayed</td>
+            <td>The customer sees a "Discount code" card on the thank-you page.</td>
+          </tr>
+          <tr>
+            <td>2. Code Visible</td>
+            <td>The configured code is displayed in a bordered code area.</td>
+          </tr>
+          <tr>
+            <td>3. Fallback</td>
+            <td>If no code is configured, the block displays "No code available".</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>10. FAQ Flow</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Customer Experience</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. FAQ List</td>
+            <td>Configured FAQ questions appear as expandable buttons.</td>
+          </tr>
+          <tr>
+            <td>2. Open Answer</td>
+            <td>Customer opens a question to reveal the answer.</td>
+          </tr>
+          <tr>
+            <td>3. Tracking</td>
+            <td>Opening a closed FAQ records <code>faq_click</code> with the question text.</td>
+          </tr>
+          <tr>
+            <td>4. Empty State</td>
+            <td>If no valid FAQ pairs are configured, the block shows "No FAQs configured".</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>11. Video Flow</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Customer Experience</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Block Displayed</td>
+            <td>Customer sees a heading, helper text, and 16:9 thumbnail image.</td>
+          </tr>
+          <tr>
+            <td>2. Thumbnail Click</td>
+            <td>Video URL opens in a new tab.</td>
+          </tr>
+          <tr>
+            <td>3. Tracking</td>
+            <td>The app records <code>video_click</code> with the heading and URL.</td>
+          </tr>
+          <tr>
+            <td>4. Required Settings</td>
+            <td>The block renders only when both Video URL and Thumbnail Image are configured.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>12. Recommended Products Flow</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Customer Experience / System Behavior</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. Order Context Read</td>
+            <td>The block reads order ID, order number, shop domain, and storefront URL from checkout context.</td>
+          </tr>
+          <tr>
+            <td>2. API Request</td>
+            <td>It calls <code>/api/recommendations</code> with order data.</td>
+          </tr>
+          <tr>
+            <td>3. Metafield Lookup</td>
+            <td>The API reads each purchased product's <code>custom.recommended_products</code> product reference metafield.</td>
+          </tr>
+          <tr>
+            <td>4. Recommendations Displayed</td>
+            <td>Up to 8 recommended products are shown with image, title, and product link.</td>
+          </tr>
+          <tr>
+            <td>5. Product Click</td>
+            <td>Clicking a product records <code>recommended_product_click</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="page-break">
+      <h2>SECTION D - QA Test Script</h2>
+      <h3>13. Admin Setup QA</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Expected Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Open the app home page.</td>
+            <td>Dashboard loads with heading "Thank You Dynamic Solutions".</td>
+          </tr>
+          <tr>
+            <td>Verify Performance Snapshot.</td>
+            <td>Total clicks, Today, and Last 7 days cards are visible.</td>
+          </tr>
+          <tr>
+            <td>Click View analytics.</td>
+            <td>Analytics page opens inside the embedded app.</td>
+          </tr>
+          <tr>
+            <td>Return home and click Customize checkout.</td>
+            <td>Shopify Admin checkout settings opens in a new tab.</td>
+          </tr>
+          <tr>
+            <td>Add each Thank You app block in checkout customization.</td>
+            <td>Blocks can be added without theme code changes.</td>
+          </tr>
+          <tr>
+            <td>Save checkout customization.</td>
+            <td>Shopify saves the configured thank-you page layout.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>14. Customer Flow QA</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Step</th>
+            <th>Expected Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Place a test order.</td>
+            <td>Customer reaches the thank-you page after checkout.</td>
+          </tr>
+          <tr>
+            <td>Verify configured blocks.</td>
+            <td>Subscription, loyalty, referral, discount, FAQ, video, and upsell blocks appear as configured.</td>
+          </tr>
+          <tr>
+            <td>Click subscription, loyalty, referral, and video CTAs.</td>
+            <td>Each opens the configured URL in a new tab.</td>
+          </tr>
+          <tr>
+            <td>Open an FAQ item.</td>
+            <td>Answer expands and the FAQ interaction is tracked.</td>
+          </tr>
+          <tr>
+            <td>Click a recommended product.</td>
+            <td>Product page opens and click is tracked.</td>
+          </tr>
+          <tr>
+            <td>Open app Analytics.</td>
+            <td>Click totals and click types update with the tested interactions.</td>
+          </tr>
+          <tr>
+            <td>Open app home page.</td>
+            <td>Recent Activity shows the latest tracked click events.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>15. Recommendation Metafield QA</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Scenario</th>
+            <th>Expected Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Purchased product has recommended product references.</td>
+            <td>Recommendations display on the thank-you page.</td>
+          </tr>
+          <tr>
+            <td>Recommended product is also in the purchased product list.</td>
+            <td>Duplicate purchased product is excluded from recommendations.</td>
+          </tr>
+          <tr>
+            <td>No recommendation metafields are configured.</td>
+            <td>Block displays "No recommendations found".</td>
+          </tr>
+          <tr>
+            <td>Order ID is unavailable.</td>
+            <td>Block displays an order ID error state.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="page-break">
+      <h2>Appendix A - Event Type Reference</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Event Type</th>
+            <th>Triggered By</th>
+            <th>Primary Data Captured</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>subscription_click</code></td>
+            <td>Subscription CTA button</td>
+            <td>CTA text, CTA link, order ID, order number, shop, source.</td>
+          </tr>
+          <tr>
+            <td><code>loyalty_click</code></td>
+            <td>Loyalty CTA button</td>
+            <td>CTA text, CTA link, loyalty heading, order context.</td>
+          </tr>
+          <tr>
+            <td><code>referral_click</code></td>
+            <td>Referral CTA button</td>
+            <td>CTA text, CTA link, referral heading, order context.</td>
+          </tr>
+          <tr>
+            <td><code>faq_click</code></td>
+            <td>Opening an FAQ answer</td>
+            <td>Question text as CTA text and item title.</td>
+          </tr>
+          <tr>
+            <td><code>video_click</code></td>
+            <td>Video thumbnail link</td>
+            <td>Video heading, video URL, order context.</td>
+          </tr>
+          <tr>
+            <td><code>recommended_product_click</code></td>
+            <td>Recommended product image or link</td>
+            <td>Product ID, product title, product URL, CTA text.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h2>Appendix B - Technical Reference</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Area</th>
+            <th>Reference</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Embedded App Routes</td>
+            <td><code>/app</code>, <code>/app/analytics</code></td>
+          </tr>
+          <tr>
+            <td>Extension Target</td>
+            <td><code>purchase.thank-you.block.render</code></td>
+          </tr>
+          <tr>
+            <td>Checkout Customization URL</td>
+            <td><code>https://admin.shopify.com/store/gwl-apps-demo/settings/checkout</code></td>
+          </tr>
+          <tr>
+            <td>Analytics Endpoint</td>
+            <td><code>/api/analytics-click</code></td>
+          </tr>
+          <tr>
+            <td>Recommendations Endpoint</td>
+            <td><code>/api/recommendations</code></td>
+          </tr>
+          <tr>
+            <td>Recommendation Metafield</td>
+            <td><code>custom.recommended_products</code></td>
+          </tr>
+          <tr>
+            <td>Production App URL Used by Extensions</td>
+            <td><code>https://thankyouapp-production.up.railway.app</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="footer">
+        GWL Thank You App | Shopify App | Feature Documentation | 2026 | Galaxy Weblinks
+      </div>
+    </section>
+  </body>
+</html>
