@@ -121,7 +121,7 @@ export default function Index() {
         </s-stack>
       </s-section>
 
-      <s-section heading="Dynamic thank-you blocks">
+      {/* <s-section heading="Dynamic thank-you blocks">
         <s-stack direction="block" gap="base">
           <s-box padding="base" borderWidth="base" borderRadius="base">
             <s-stack gap="small">
@@ -154,7 +154,7 @@ export default function Index() {
             </s-stack>
           </s-box>
         </s-stack>
-      </s-section>
+      </s-section> */}
 
       <s-section heading="Recent activity">
         {recentClicks.length ? (
@@ -199,13 +199,13 @@ export default function Index() {
         )}
       </s-section>
 
-      <s-section slot="aside" heading="Solution checklist">
+      {/* <s-section slot="aside" heading="Solution checklist">
         <s-unordered-list>
           <s-list-item>Recommend products after purchase</s-list-item>
           <s-list-item>Promote a subscription or repeat-purchase CTA</s-list-item>
           <s-list-item>Measure every thank-you page click</s-list-item>
         </s-unordered-list>
-      </s-section>
+      </s-section> */}
     </s-page>
   );
 }
