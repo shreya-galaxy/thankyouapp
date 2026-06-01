@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "adba87c40b9eb8f83be162d3d6bde96a"
-name = "thankyou-app"
+name = "Thank You App"
 application_url = "https://thankyouapp-production.up.railway.app"
 embedded = true
 
