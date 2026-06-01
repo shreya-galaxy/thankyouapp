@@ -2,7 +2,7 @@ api_version = "2026-04"
 
 [[extensions]]
 type = "ui_extension"
-name = "thank-you-upsell"
+name = "Thank You - Upsell Section"
 handle = "thank-you-upsell"
 uid = "668606a9-da05-e73e-6c99-cf8e980b59ed8c1dcfb8"
 

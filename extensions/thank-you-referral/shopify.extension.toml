@@ -1,7 +1,7 @@
 api_version = "2026-04"
 
 [[extensions]]
-name = "thank-you-referral"
+name = "Thank You - Referral Section"
 handle = "thank-you-referral"
 type = "ui_extension"
 uid = "a2b9c8d4-0f3e-4e7b-9c1f-8d6a2b5e4f77"

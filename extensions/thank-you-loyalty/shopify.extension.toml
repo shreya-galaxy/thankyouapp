@@ -1,7 +1,7 @@
 api_version = "2026-04"
 
 [[extensions]]
-name = "thank-you-loyalty"
+name = "Thank You - Loyalty Section"
 handle = "thank-you-loyalty"
 type = "ui_extension"
 uid = "f6b4c1ca-3584-2747-cca3-a78ca96a744b17d53dc3"

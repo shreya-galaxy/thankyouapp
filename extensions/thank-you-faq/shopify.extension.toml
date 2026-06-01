@@ -1,6 +1,6 @@
 api_version = "2026-04"
 
-name = "thank-you-faq"
+name = "Thank You - FAQ Section"
 type = "ui_extension"
 uid = "b3e90b28-925f-7636-1b94-23707aefafd81160f1a9"
 

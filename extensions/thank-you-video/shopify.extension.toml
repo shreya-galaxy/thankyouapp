@@ -6,7 +6,7 @@
 api_version = "2026-04"
 
 [[extensions]]
-name = "thank-you-video"
+name = "Thank You - Video Section"
 handle = "thank-you-video"
 type = "ui_extension"
 uid = "d7e773aa-90eb-fc68-977e-9f694c6a6b952db5b25f"

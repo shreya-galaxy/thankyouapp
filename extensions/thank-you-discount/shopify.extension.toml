@@ -1,6 +1,6 @@
 api_version = "2026-04"
 
-name = "thank-you-discount"
+name = "Thank You - Discount Section"
 type = "ui_extension"
 uid = "b8d84524-0368-11a3-eae7-d5d23b0429c29e362e72"
 
