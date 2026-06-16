@@ -32,3 +32,27 @@ export const unauthenticated = shopify.unauthenticated;
 export const login = shopify.login;
 export const registerWebhooks = shopify.registerWebhooks;
 export const sessionStorage = shopify.sessionStorage;
+
+// Wrapper around shopify.authenticate.admin that logs when no session.shop is present.
+export async function authenticateAdmin(request: Request) {
+  try {
+    const result = await (shopify.authenticate as any).admin(request);
+
+    if (!result || !result.session || !result.session.shop) {
+      try {
+        const headers = Object.fromEntries(Array.from(request.headers || []));
+        console.error("AUTH WARNING: authenticate.admin returned no session.shop", {
+          url: request.url?.toString?.() ?? "<unknown>",
+          headers,
+        });
+      } catch (err) {
+        console.error("AUTH WARNING: failed to log request headers", err);
+      }
+    }
+
+    return result;
+  } catch (err) {
+    console.error("AUTH ERROR: authenticate.admin threw error", err);
+    throw err;
+  }
+}

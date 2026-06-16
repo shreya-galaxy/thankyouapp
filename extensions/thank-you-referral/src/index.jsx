@@ -1,26 +1,57 @@
 import '@shopify/ui-extensions/preact';
 import {render} from "preact";
+import {useEffect, useState} from "preact/hooks";
 import {trackThankYouClick} from '../../shared/analytics';
 import {limitText, trimText} from '../../shared/text';
+import {fetchActiveBlock} from '../../shared/blocks';
 
 export default () => {
   render(<Extension />, document.body);
 };
 
 function Extension() {
-  const s = shopify.settings.current;
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchActiveBlock('referral')
+      .then((block) => {
+        setConfig(block?.config || null);
+      })
+      .catch((error) => {
+        console.error(error);
+        setConfig(null);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return null;
+  if (!config) return null;
+
   const referralHeading = limitText(
-    trimText(s.referral_heading) || 'Give ₹, Get ₹',
+    trimText(config.title) || 'Refer friends. Get rewards.',
     48,
   );
   const referralText = limitText(
-    trimText(s.referral_text) ||
-      'Invite friends and earn rewards when they purchase',
-    120,
+    replaceReferralVariables(
+      trimText(config.description) ||
+        'Invite friends and earn rewards when they purchase.',
+      config,
+    ),
+    180,
   );
   const referralCta = limitText(
-    trimText(s.referral_cta_text) || 'Refer a Friend',
+    trimText(config.shareText) || 'Share',
     24,
+  );
+  const referralLink = trimText(config.referralLink);
+  const referralCode = limitText(
+    trimText(config.referralCode) || 'THANKYOU15',
+    40,
+  );
+  const shareLabel = limitText(
+    trimText(config.shareLabel) || 'Share now:',
+    40,
   );
 
   const trackReferralClick = () => {
@@ -28,29 +59,67 @@ function Extension() {
       'referral_click',
       {
         ctaText: referralCta,
-        ctaLink: s.referral_cta_link,
+        ctaLink: referralLink,
         itemTitle: referralHeading,
-        itemUrl: s.referral_cta_link,
+        itemUrl: referralLink,
       },
     );
   };
 
-  if (!s.referral_cta_link) return null;
+  const trackCopyCode = () => {
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(referralCode).catch(() => {});
+    }
+
+    trackThankYouClick(
+      'referral_code_copy',
+      {
+        ctaText: 'Copy code',
+        itemTitle: referralHeading,
+        itemId: referralCode,
+      },
+    );
+  };
+
+  if (!referralLink && !referralCode) return null;
 
   return (
-    <s-box padding="base" border="base" borderRadius="base">
-      <s-stack gap="small">
-        <s-text type="strong">{referralHeading}</s-text>
+    <s-box padding="base" border="base" borderRadius="large">
+      <s-stack gap="base">
+        <s-box padding="small" background="subdued" borderRadius="base">
+          <s-text type="strong">{referralHeading}</s-text>
+        </s-box>
         <s-text>{referralText}</s-text>
+        <s-stack gap="small">
+          <s-text>{shareLabel}</s-text>
 
-        <s-button
-          href={s.referral_cta_link}
-          target="_blank"
-          onClick={trackReferralClick}
-        >
-          {referralCta}
-        </s-button>
+          <s-stack direction="inline" gap="small">
+            {/* {referralLink && (
+              <s-button
+                href={referralLink}
+                target="_blank"
+                onClick={trackReferralClick}
+              >
+                {referralCta}
+              </s-button>
+            )} */}
+
+            {referralCode && (
+              <s-button variant="secondary" onClick={trackCopyCode}>
+                Copy code
+              </s-button>
+            )}
+          </s-stack>
+        </s-stack>
       </s-stack>
     </s-box>
   );
+}
+
+function replaceReferralVariables(value, config) {
+  return value
+    .replaceAll('{friend_reward}', trimText(config.friendReward) || '15%')
+    .replaceAll('{advocate_reward}', trimText(config.advocateReward) || '$10')
+    .replaceAll('{referral_code}', trimText(config.referralCode) || 'THANKYOU15')
+    .replaceAll('{referral_link}', trimText(config.referralLink));
 }

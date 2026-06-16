@@ -14,11 +14,23 @@ export default async function handleRequest(
   reactRouterContext: EntryContext,
   context: HydrogenRouterContextProvider,
 ) {
+  const env = context.env as unknown as Record<string, string | undefined>;
+  const appOrigin = getOrigin(
+    env.PUBLIC_APP_URL || env.PUBLIC_APP_PREVIEW_URL || env.LOCAL_APP_URL,
+  );
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
     shop: {
       checkoutDomain: context.env.PUBLIC_CHECKOUT_DOMAIN,
       storeDomain: context.env.PUBLIC_STORE_DOMAIN,
     },
+    connectSrc: [
+      "'self'",
+      'https://monorail-edge.shopifysvc.com',
+      'https://*.myshopify.com',
+      'https://*.shopify.com',
+      'https://*.trycloudflare.com',
+      ...(appOrigin ? [appOrigin] : []),
+    ],
   });
 
   const body = await renderToReadableStream(
@@ -50,4 +62,14 @@ export default async function handleRequest(
     headers: responseHeaders,
     status: responseStatusCode,
   });
+}
+
+function getOrigin(url?: string) {
+  if (!url) return '';
+
+  try {
+    return new URL(url).origin;
+  } catch {
+    return '';
+  }
 }

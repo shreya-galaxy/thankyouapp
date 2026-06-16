@@ -1,55 +1,85 @@
 import '@shopify/ui-extensions/preact';
 import {render} from "preact";
+import {useEffect, useState} from "preact/hooks";
 import {trackThankYouClick} from '../../shared/analytics';
 import {limitText, trimText} from '../../shared/text';
+import {fetchActiveBlock} from '../../shared/blocks';
 
 export default () => {
   render(<Extension />, document.body);
 };
 
 function Extension() {
-  const s = shopify.settings.current;
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchActiveBlock('loyalty')
+      .then((block) => {
+        setConfig(block?.config || null);
+      })
+      .catch((error) => {
+        console.error(error);
+        setConfig(null);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return null;
+  if (!config) return null;
+
   const loyaltyHeading = limitText(
-    trimText(s.loyalty_heading) || 'Earn rewards on every order',
+    trimText(config.title) || 'Earn rewards on every order',
     48,
   );
   const loyaltyText = limitText(
-    trimText(s.loyalty_text) ||
+    trimText(config.description) ||
       'Join our loyalty program and start earning points today',
-    120,
+    160,
   );
   const loyaltyCta = limitText(
-    trimText(s.loyalty_cta_text) || 'Join Now',
+    trimText(config.buttonText) || 'Join now',
     24,
   );
+  const loyaltyLink = trimText(config.buttonUrl);
+  const pointsText = limitText(
+    trimText(config.pointsText) || '2x points',
+    40,
+  );
+  const validUntil = limitText(trimText(config.validUntil), 60);
 
   const trackLoyaltyClick = () => {
     trackThankYouClick(
       'loyalty_click',
       {
         ctaText: loyaltyCta,
-        ctaLink: s.loyalty_cta_link,
+        ctaLink: loyaltyLink,
         itemTitle: loyaltyHeading,
-        itemUrl: s.loyalty_cta_link,
+        itemUrl: loyaltyLink,
       },
     );
   };
 
-  if (!s.loyalty_cta_link) return null;
-
   return (
-    <s-box padding="base" border="base" borderRadius="base">
-      <s-stack gap="small">
+    <s-box padding="base" border="base" borderRadius="large">
+      <s-stack gap="base">
+        <s-box padding="small" background="subdued" borderRadius="base">
+          <s-text type="strong">{pointsText}</s-text>
+        </s-box>
         <s-text type="strong">{loyaltyHeading}</s-text>
         <s-text>{loyaltyText}</s-text>
 
-        <s-button
-          href={s.loyalty_cta_link}
-          target="_blank"
-          onClick={trackLoyaltyClick}
-        >
-          {loyaltyCta}
-        </s-button>
+        {loyaltyLink && (
+          <s-button
+            href={loyaltyLink}
+            target="_blank"
+            onClick={trackLoyaltyClick}
+          >
+            {loyaltyCta}
+          </s-button>
+        )}
+
+        {validUntil && <s-text>{validUntil}</s-text>}
       </s-stack>
     </s-box>
   );
