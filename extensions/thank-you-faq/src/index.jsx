@@ -1,26 +1,42 @@
 import '@shopify/ui-extensions/preact';
 import {render} from "preact";
-import {useState} from "preact/hooks";
+import {useEffect, useState} from "preact/hooks";
 import {trackThankYouClick} from '../../shared/analytics';
 import {hasText, limitText} from '../../shared/text';
+import {fetchActiveBlock} from '../../shared/blocks';
 
 export default () => {
   render(<Extension />, document.body);
 };
 
 function Extension() {
-  const s = shopify.settings.current;
-
-  const faqs = Array.from({length: 10}, (_, index) => {
-    const position = index + 1;
-
-    return {
-      q: s[`faq_q${position}`],
-      a: s[`faq_a${position}`],
-    };
-  }).filter((faq) => hasText(faq.q) && hasText(faq.a));
-
+  const [faqs, setFaqs] = useState([]);
+  const [heading, setHeading] = useState('');
   const [openIndex, setOpenIndex] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchActiveBlock('faq')
+      .then((block) => {
+        const items = block?.config?.items || [];
+
+        setHeading(block?.config?.heading || '');
+        setFaqs(
+          items
+            .map((item) => ({
+              q: item.question,
+              a: item.answer,
+            }))
+            .filter((faq) => hasText(faq.q) && hasText(faq.a)),
+        );
+      })
+      .catch((error) => {
+        console.error(error);
+        setHeading('');
+        setFaqs([]);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   const toggleFAQ = (index) => {
     const faq = faqs[index];
@@ -36,48 +52,63 @@ function Extension() {
     setOpenIndex(isOpen ? null : index);
   };
 
-  return (
-    <s-stack gap="base">
-      <s-box padding="base" border="base" borderRadius="base">
-        <s-stack gap="small">
-          <s-text type="strong">Frequently asked questions</s-text>
-          {/* <s-text>
-            Answer shopper questions without sending them away from the thank-you page.
-          </s-text> */}
-        </s-stack>
-      </s-box>
+  if (loading) return null;
+  if (!faqs.length) return null;
 
-      {faqs.length ? (
-        faqs.map((faq, i) => (
-          <s-box
-            key={i}
-            padding="base"
-            border="base"
-            borderRadius="base"
-          >
-            <s-stack gap="small">
-              <s-button
+  return (
+    <s-box padding="base">
+      <s-stack gap="small">
+
+        {heading && (
+          <s-box paddingBlockEnd="small" paddingInlineStart="small">
+            <s-text type="strong">{limitText(heading, 80)}</s-text>
+          </s-box>
+        )}
+
+        {faqs.map((faq, i) => {
+          const isOpen = openIndex === i;
+          return (
+            <s-box
+              key={i}
+              // borderRadius="large"
+              background="base"
+              // border="base"
+            >
+              <s-stack gap="none">
+
+               <s-button
                 variant="secondary"
                 inlineSize="fill"
                 onClick={() => toggleFAQ(i)}
               >
-                {openIndex === i ? '- ' : '+ '}
-                {limitText(faq.q, 64)}
+                <s-stack direction="inline" gap="base">
+                <s-text type="strong">
+                  {limitText(faq.q, 72)}
+                </s-text>
+
+                <s-text>
+                  {isOpen ? '⌄' : '›'}
+                </s-text>
+              </s-stack>
               </s-button>
 
-              {openIndex === i && (
-                <s-box paddingInlineStart="base">
-                  <s-text>{faq.a}</s-text>
-                </s-box>
-              )}
-            </s-stack>
-          </s-box>
-        ))
-      ) : (
-        <s-box padding="base" border="base" borderRadius="base">
-          <s-text>No FAQs configured</s-text>
-        </s-box>
-      )}
-    </s-stack>
+               {isOpen && (
+                  <s-box padding="base" paddingBlockStart="small">
+                    <s-stack gap="small">
+                      <s-divider />
+                      <s-text>
+                        {faq.a}
+                      </s-text>
+                    </s-stack>
+                  </s-box>
+                )}
+
+              </s-stack>
+            </s-box>
+          );
+        })}
+
+      </s-stack>
+    </s-box>
   );
 }

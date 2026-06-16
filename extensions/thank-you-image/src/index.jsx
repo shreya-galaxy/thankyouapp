@@ -15,8 +15,8 @@ function Extension() {
 
   useEffect(() => {
     Promise.all([
-      // fetchBlock('image'),
-      fetchBlock('video'),
+      fetchBlock('image'),
+      // fetchBlock('video'),
       fetchBlock('media'),
     ])
       .then((results) => {

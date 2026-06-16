@@ -1,4 +1,4 @@
-import {redirect, useLoaderData} from 'react-router';
+import {redirect, useLoaderData, useRouteLoaderData} from 'react-router';
 import type {Route} from './+types/account.orders.$id';
 import {Money, Image} from '@shopify/hydrogen';
 import type {
@@ -81,6 +81,8 @@ export default function OrderRoute() {
     discountPercentage,
     fulfillmentStatus,
   } = useLoaderData<typeof loader>();
+  const rootData = useRouteLoaderData('root') as any;
+  const publicStoreDomain = rootData?.publicStoreDomain || '';
   return (
     <div className="account-order">
       <h2>Order {order.name}</h2>
@@ -185,6 +187,14 @@ export default function OrderRoute() {
         </div>
       </div>
       <br />
+      <br />
+      <section>
+        {/* Render app-managed blocks on post-order pages (client-side hydration) */}
+        <div className="thankyou-placeholder" data-type="image" data-shop={publicStoreDomain}></div>
+        <div className="thankyou-placeholder" data-type="video" data-shop={publicStoreDomain}></div>
+        <div className="thankyou-placeholder" data-type="faq" data-shop={publicStoreDomain}></div>
+      </section>
+
       <p>
         <a target="_blank" href={order.statusPageUrl} rel="noreferrer">
           View Order Status →

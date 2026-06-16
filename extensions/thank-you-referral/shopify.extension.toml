@@ -17,38 +17,3 @@ network_access = true
 [[extensions.metafields]]
 namespace = "$app"
 key = "requestedFreeGift"
-
-[[extensions.settings.fields]]
-key = "referral_heading"
-type = "single_line_text_field"
-name = "Referral Heading"
-default = "Give ₹, Get ₹"
-[[extensions.settings.fields.validations]]
-name = "max"
-value = "60"
-
-[[extensions.settings.fields]]
-key = "referral_text"
-type = "multi_line_text_field"
-name = "Referral Description"
-default = "Invite friends and earn rewards when they purchase"
-[[extensions.settings.fields.validations]]
-name = "max"
-value = "160"
-
-[[extensions.settings.fields]]
-key = "referral_cta_text"
-type = "single_line_text_field"
-name = "Referral CTA Text"
-default = "Refer a Friend"
-[[extensions.settings.fields.validations]]
-name = "max"
-value = "24"
-
-[[extensions.settings.fields]]
-key = "referral_cta_link"
-type = "single_line_text_field"
-name = "Referral CTA Link"
-[[extensions.settings.fields.validations]]
-name = "max"
-value = "2048"

@@ -3,12 +3,15 @@ import {useLoaderData} from "react-router";
 import {authenticate} from "../shopify.server";
 import {boundary} from "@shopify/shopify-app-react-router/server";
 import prisma from "../db.server";
+import { createMetafieldDefinitions } from "../utils/metafields.server";
 
 const checkoutCustomizeUrl =
   "https://admin.shopify.com/store/gwl-apps-demo/settings/checkout";
 
 export const loader = async ({request}: LoaderFunctionArgs) => {
-  const {session} = await authenticate.admin(request);
+  // const {session} = await authenticate.admin(request);
+  const {session, admin} = await authenticate.admin(request);
+  await createMetafieldDefinitions(admin);
   const shop = session.shop;
   const today = new Date();
   const sevenDaysAgo = new Date();
@@ -128,7 +131,7 @@ export default function Index() {
         <s-stack direction="block" gap="base">
           <s-box padding="base" borderWidth="base" borderRadius="base">
             <s-stack gap="small">
-              <s-heading>Smart product recommendations</s-heading>
+              <s-heading>Upsell product recommendations</s-heading>
               <s-paragraph>
                 Shows shoppers products related to their completed order and
                 tracks each product click back to this dashboard.
@@ -138,21 +141,20 @@ export default function Index() {
 
           <s-box padding="base" borderWidth="base" borderRadius="base">
             <s-stack gap="small">
-              <s-heading>Subscription call to action</s-heading>
+              <s-heading>FAQ accordion</s-heading>
               <s-paragraph>
-                Displays a configurable thank-you page offer that can send
-                customers to a subscription, membership, or repeat-purchase
-                flow.
+                Adds a compact accordion for common post-purchase questions on
+                the thank-you page.
               </s-paragraph>
             </s-stack>
           </s-box>
 
           <s-box padding="base" borderWidth="base" borderRadius="base">
             <s-stack gap="small">
-              <s-heading>Click tracking</s-heading>
+              <s-heading>Image or video section</s-heading>
               <s-paragraph>
-                Captures order context, CTA details, and clicked product data
-                so the merchant can measure which thank-you blocks convert.
+                Lets merchants choose a static image or a clickable video
+                thumbnail from checkout customization.
               </s-paragraph>
             </s-stack>
           </s-box>
@@ -169,10 +171,12 @@ export default function Index() {
           <s-stack direction="inline" gap="small">
             <s-button
               variant="primary"
-              href={checkoutCustomizeUrl}
-              target="_blank"
+              href="/app/blocks"
             >
-              Customize checkout
+              Manage app blocks
+            </s-button>
+            <s-button href={checkoutCustomizeUrl} target="_blank">
+              Open checkout editor
             </s-button>
           </s-stack>
         </s-stack>

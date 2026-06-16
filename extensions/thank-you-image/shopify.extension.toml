@@ -4,12 +4,12 @@
 # The version of APIs your extension will receive. Learn more:
 # https://shopify.dev/docs/api/usage/versioning
 api_version = "2026-04"
+uid = "2344b2c7-fcff-6ae7-f024-aa5f02e28958cb8df757"
 
 [[extensions]]
-name = "Thank You - Video Section"
-handle = "thank-you-video"
+name = "Thank You - Image Section"
+handle = "thank-you-image"
 type = "ui_extension"
-uid = "d7e773aa-90eb-fc68-977e-9f694c6a6b952db5b25f"
 
 # Controls where in Shopify your extension will be injected,
 # and the file that contains your extension’s source code. Learn more:

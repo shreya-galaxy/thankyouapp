@@ -8,6 +8,7 @@ import {
 import {apiUrl} from '../../shared/app-config';
 import {trackThankYouClick} from '../../shared/analytics';
 import {limitText} from '../../shared/text';
+import {fetchActiveBlock} from '../../shared/blocks';
 
 export default async () => {
   render(<Extension />, document.body);
@@ -20,6 +21,8 @@ function Extension() {
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [blockConfig, setBlockConfig] = useState(null);
+  const [blockEnabled, setBlockEnabled] = useState(false);
 
   const loadRecommendations = useCallback(async () => {
     try {
@@ -75,7 +78,22 @@ function Extension() {
   }, [orderConfirmation]);
 
   useEffect(() => {
-    loadRecommendations();
+    fetchActiveBlock('upsell')
+      .then((block) => {
+        if (!block) {
+          setLoading(false);
+          return;
+        }
+
+        setBlockEnabled(true);
+        setBlockConfig(block.config || null);
+        loadRecommendations();
+      })
+      .catch((error) => {
+        console.error(error);
+        setBlockConfig(null);
+        setLoading(false);
+      })
   }, [loadRecommendations]);
 
   const handleProductClick = (product) => {
@@ -91,9 +109,12 @@ function Extension() {
     );
   };
 
-  const heading = 'Recommended products';
-  const subtitle =
-    'Shown from metafields linked to every purchased product.';
+  const heading =
+    blockConfig?.upsellHeading || 'Recommended products';
+  const emptyMessage =
+    blockConfig?.emptyMessage || 'No recommendations found';
+
+  if (!blockEnabled && !loading) return null;
 
   return (
     <s-stack gap="base">
@@ -108,7 +129,7 @@ function Extension() {
         </s-box>
       ) : !recommendedProducts.length ? (
         <s-box padding="base" border="base" borderRadius="base">
-          <s-text>No recommendations found</s-text>
+          <s-text>{emptyMessage}</s-text>
         </s-box>
       ) : (
         <>

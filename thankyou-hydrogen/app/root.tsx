@@ -79,6 +79,8 @@ export async function loader(args: Route.LoaderArgs) {
     ...deferredData,
     ...criticalData,
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
+    publicAppUrl:
+      env.PUBLIC_APP_URL || env.PUBLIC_APP_PREVIEW_URL || env.LOCAL_APP_URL || '',
     shop: getShopAnalytics({
       storefront,
       publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
@@ -144,6 +146,8 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 
 export function Layout({children}: {children?: React.ReactNode}) {
   const nonce = useNonce();
+  const data = useRouteLoaderData<RootLoader>('root');
+  const publicAppUrl = data?.publicAppUrl || '';
 
   return (
     <html lang="en">
@@ -158,6 +162,8 @@ export function Layout({children}: {children?: React.ReactNode}) {
       </head>
       <body>
         {children}
+        <script nonce={nonce} dangerouslySetInnerHTML={{__html: `window.PUBLIC_APP_URL = ${JSON.stringify(publicAppUrl)}; window.THANKYOU_APP_URL = ${JSON.stringify(publicAppUrl)};`}} />
+        <script type="module" src="/thankyou-hydrator.js" nonce={nonce}></script>
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
       </body>
