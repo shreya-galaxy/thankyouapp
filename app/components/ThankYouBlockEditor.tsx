@@ -88,133 +88,133 @@ export function ThankYouBlockEditor({
     ? config.items
     : defaultFaqItems(template.defaultConfig);
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-  event.preventDefault();
-  const form = event.currentTarget;
+//     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+//   event.preventDefault();
+//   const form = event.currentTarget;
 
-  setSaveError("");
+//   setSaveError("");
 
-  const formData = new FormData(form);
+//   const formData = new FormData(form);
 
-  const heading = (formData.get("heading") as string)?.trim();
-  const mediaType = formData.get("mediaType") as string;
-  const imageUrl = (formData.get("imageUrl") as string)?.trim();
-  const videoUrl = (formData.get("videoUrl") as string)?.trim();
-  const videoThumbnail = (
-    formData.get("videoThumbnail") as string
-  )?.trim();
+//   const heading = (formData.get("heading") as string)?.trim();
+//   const mediaType = formData.get("mediaType") as string;
+//   const imageUrl = (formData.get("imageUrl") as string)?.trim();
+//   const videoUrl = (formData.get("videoUrl") as string)?.trim();
+//   const videoThumbnail = (
+//     formData.get("videoThumbnail") as string
+//   )?.trim();
 
-  // Validate Image Block
-  if ((type === "image" || mediaType === "image")) {
-    if (!heading) {
-      setSaveError("Section header is required.");
-      return;
-    }
+//   // Validate Image Block
+//   if ((type === "image" || mediaType === "image")) {
+//     if (!heading) {
+//       setSaveError("Section header is required.");
+//       return;
+//     }
 
-    if (!imageUrl) {
-      setSaveError("Image URL is required.");
-      return;
-    }
-  }
+//     if (!imageUrl) {
+//       setSaveError("Image URL is required.");
+//       return;
+//     }
+//   }
 
-  // Validate Video Block
-  if ((type === "video" || mediaType === "video")) {
-    if (!heading) {
-      setSaveError("Video title is required.");
-      return;
-    }
+//   // Validate Video Block
+//   if ((type === "video" || mediaType === "video")) {
+//     if (!heading) {
+//       setSaveError("Video title is required.");
+//       return;
+//     }
 
-    if (!videoUrl) {
-      setSaveError("Video URL is required.");
-      return;
-    }
+//     if (!videoUrl) {
+//       setSaveError("Video URL is required.");
+//       return;
+//     }
 
-    if (!videoThumbnail) {
-      setSaveError("Thumbnail image URL is required.");
-      return;
-    }
-  }
+//     if (!videoThumbnail) {
+//       setSaveError("Thumbnail image URL is required.");
+//       return;
+//     }
+//   }
 
-  setIsSaving(true);
+//   setIsSaving(true);
 
-  try {
-    const token = await shopify.idToken();
+//   try {
+//     const token = await shopify.idToken();
 
-    const response = await fetch(
-      window.location.pathname + window.location.search,
-      {
+//     const response = await fetch(
+//       window.location.pathname + window.location.search,
+//       {
+//         method: "POST",
+//         headers: {
+//           Accept: "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//         body: formData,
+//       }
+//     );
+
+//     const result = (await response.json().catch(() => null)) as
+//       | SaveResult
+//       | null;
+
+//     if (response.status === 401) {
+//       setSaveError(result?.message || "Not authenticated. Please log in.");
+//       return;
+//     }
+
+//     if (!response.ok || !result?.success) {
+//       setSaveError(result?.message || "Could not save block.");
+//       return;
+//     }
+
+//     navigate(result?.redirectTo || "/app/blocks");
+//   } catch (error) {
+//     console.error("SAVE REQUEST ERROR:", error);
+//     setSaveError(
+//       error instanceof Error ? error.message : "Could not save block."
+//     );
+//   } finally {
+//     setIsSaving(false);
+//   }
+// };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    setIsSaving(true);
+    setSaveError("");
+
+    try {
+      const token = await shopify.idToken();
+      const response = await fetch(window.location.pathname + window.location.search, {
         method: "POST",
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: formData,
+        body: new FormData(form),
+      });
+      const result = (await response.json().catch(() => null)) as SaveResult | null;
+
+      // Surface explicit authentication errors to the user without throwing generic message
+      if (response.status === 401) {
+        setSaveError(result?.message || "Not authenticated. Please log in.");
+        return;
       }
-    );
 
-    const result = (await response.json().catch(() => null)) as
-      | SaveResult
-      | null;
+      // if (!response.ok || !result?.success) {
+      //   throw new Error(result?.message || JSON.stringify(response) || "Could not save block1.");
+      // }
 
-    if (response.status === 401) {
-      setSaveError(result?.message || "Not authenticated. Please log in.");
-      return;
+      navigate(result?.redirectTo || "/app/blocks");
+    } catch (error) {
+      console.error("SAVE REQUEST ERROR:", error);
+      setSaveError(
+        error instanceof Error ? error.message : "Could not save block2.",
+      );
+    } finally {
+      setIsSaving(false);
     }
-
-    if (!response.ok || !result?.success) {
-      setSaveError(result?.message || "Could not save block.");
-      return;
-    }
-
-    navigate(result?.redirectTo || "/app/blocks");
-  } catch (error) {
-    console.error("SAVE REQUEST ERROR:", error);
-    setSaveError(
-      error instanceof Error ? error.message : "Could not save block."
-    );
-  } finally {
-    setIsSaving(false);
-  }
-};
-
-  // const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-  //   event.preventDefault();
-  //   const form = event.currentTarget;
-  //   setIsSaving(true);
-  //   setSaveError("");
-
-  //   try {
-  //     const token = await shopify.idToken();
-  //     const response = await fetch(window.location.pathname + window.location.search, {
-  //       method: "POST",
-  //       headers: {
-  //         Accept: "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //       body: new FormData(form),
-  //     });
-  //     const result = (await response.json().catch(() => null)) as SaveResult | null;
-
-  //     // Surface explicit authentication errors to the user without throwing generic message
-  //     if (response.status === 401) {
-  //       setSaveError(result?.message || "Not authenticated. Please log in.");
-  //       return;
-  //     }
-
-  //     // if (!response.ok || !result?.success) {
-  //     //   throw new Error(result?.message || JSON.stringify(response) || "Could not save block1.");
-  //     // }
-
-  //     navigate(result?.redirectTo || "/app/blocks");
-  //   } catch (error) {
-  //     console.error("SAVE REQUEST ERROR:", error);
-  //     setSaveError(
-  //       error instanceof Error ? error.message : "Could not save block2.",
-  //     );
-  //   } finally {
-  //     setIsSaving(false);
-  //   }
-  // };
+  };
 
   return (
       <s-page
@@ -636,6 +636,7 @@ function MediaFields({
             style={fieldStyle}
             required
           />
+          <text>Enter a valid video URL (YouTube, Vimeo, MP4, or other supported video link). The video will open in a new browser tab when customers click the link.</text>
           <input
             aria-label="Thumbnail image URL"
             defaultValue={config.videoThumbnail || ""}
