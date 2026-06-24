@@ -8,6 +8,10 @@ uid = "b8d84524-0368-11a3-eae7-d5d23b0429c29e362e72"
 module = "./src/index.jsx"
 target = "purchase.thank-you.block.render"
 
+[[targeting]]
+module = "./src/index.jsx"
+target = "purchase.checkout.block.render"
+
 [capabilities]
 api_access = true
 network_access = true

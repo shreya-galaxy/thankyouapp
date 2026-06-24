@@ -56,6 +56,30 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return redirect("/app/blocks");
   }
 
+  const existingBlock = await prisma.thankYouBlock.findFirst({
+    where: {
+      shop: session.shop,
+      type,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (existingBlock) {
+    const message =
+      "This extension has already been added. Edit the existing block instead.";
+
+    if (wantsJson) {
+      return responseJson(
+        {success: false, message, redirectTo: `/app/blocks/${existingBlock.id}`},
+        409,
+      );
+    }
+
+    return redirect(`/app/blocks/${existingBlock.id}`);
+  }
+
   try {
     const block = await prisma.thankYouBlock.create({
       data: {

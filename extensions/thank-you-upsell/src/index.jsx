@@ -5,13 +5,22 @@ import {
   useEffect,
   useState,
 } from 'preact/hooks';
-import {apiUrl} from '../../shared/app-config';
+import {apiUrls} from '../../shared/app-config';
 import {trackThankYouClick} from '../../shared/analytics';
 import {limitText} from '../../shared/text';
 import {fetchActiveBlock} from '../../shared/blocks';
+import {claimExtensionRender} from '../../shared/render-once';
+import {fetchWithTimeout} from '../../shared/fetch-with-timeout';
 
-export default async () => {
-  render(<Extension />, document.body);
+export default () => {
+  try {
+    if (!claimExtensionRender('upsell')) return;
+
+    render(<Extension />, document.body);
+  } catch (error) {
+    console.error('Extension failed to render:', error);
+    // Graceful fallback - render nothing rather than breaking page
+  }
 };
 
 function Extension() {
@@ -30,51 +39,43 @@ function Extension() {
         orderConfirmation?.order?.id;
       const orderNumber =
         orderConfirmation?.number;
-      const shop = shopify.shop.myshopifyDomain;
+      const checkoutToken =
+        signalValue(shopify.checkoutToken);
+      const shop = shopDomain(shopify.shop);
       const storefrontUrl =
-        shopify.shop.storefrontUrl;
+        shopUrl(shopify.shop);
 
       if (!orderId) {
         setError('Order ID not found');
         return;
       }
 
-      const response = await fetch(
-        apiUrl('/api/recommendations'),
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            orderId,
-            orderNumber,
-            shop,
-            storefrontUrl,
-          }),
-        },
-      );
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        setError(
-          data.message ||
-            'Could not load recommendations',
-        );
+      if (!shop) {
+        setError('Shop domain not found');
         return;
       }
 
-      setRecommendedProducts(
-        data.products || [],
-      );
-    } catch (e) {
-      console.error(e);
+      const data = await fetchRecommendations({
+        orderId,
+        orderNumber,
+        checkoutToken,
+        shop,
+        storefrontUrl,
+      });
 
-      setError(e?.message || 'Could not load recommendations');
-    } finally {
-      setLoading(false);
-    }
+      setRecommendedProducts(data.products || []);
+    } catch (e) {
+    // Log detailed error for debugging
+    console.error('Failed to load recommendations:', {
+      error: e.message,
+      stack: e.stack
+    });
+    
+    // User-friendly message
+    setError(e?.message || 'Could not load recommendations');
+  } finally {
+    setLoading(false);
+  }
   }, [orderConfirmation]);
 
   useEffect(() => {
@@ -118,10 +119,9 @@ function Extension() {
 
   return (
     <s-stack gap="base">
-      
       {loading ? (
         <s-box padding="base" border="base" borderRadius="base">
-          <s-text>Loading recommendations...</s-text>
+          <s-skeleton-paragraph></s-skeleton-paragraph>
         </s-box>
       ) : error ? (
         <s-box padding="base" border="base" borderRadius="base">
@@ -135,7 +135,7 @@ function Extension() {
         <>
         <s-box padding="base" border="base" borderRadius="base">
           <s-stack gap="small">
-            <s-text appearance="headingMd">{heading}</s-text>
+            <s-text>{heading}</s-text>
             {/* <s-text>{subtitle}</s-text> */}
           </s-stack>
         </s-box>
@@ -162,7 +162,7 @@ function Extension() {
                     <s-image
                       src={product.image}
                       alt={product.title}
-                      aspectRatio={1}
+                      aspectRatio="1/1"
                       objectFit="cover"
                       inlineSize="fill"
                     />
@@ -188,4 +188,92 @@ function Extension() {
       )}
     </s-stack>
   );
+}
+
+async function fetchRecommendations(payload) {
+  const errors = [];
+
+  for (const url of apiUrls('/api/recommendations')) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'bypass-tunnel-reminder': 'true',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.success) {
+        errors.push(data?.message || `${response.status} from ${url}`);
+        continue;
+      }
+
+      return data;
+    } catch (error) {
+      errors.push(error?.message || `Could not load ${url}`);
+    }
+  }
+
+  throw new Error(
+    errors.join(' | ') || 'Could not load recommendations',
+  );
+}
+
+function shopDomain(shop) {
+  return firstNormalized([
+    shop?.myshopifyDomain,
+    shop?.domain,
+    shop?.storefrontUrl,
+    shop?.storefrontUrl?.current,
+  ]);
+}
+
+function signalValue(value) {
+  return value?.current || value;
+}
+
+function shopUrl(shop) {
+  const value = firstValue([
+    shop?.storefrontUrl,
+    shop?.storefrontUrl?.current,
+    shop?.domain,
+    shop?.myshopifyDomain,
+  ]);
+
+  if (!value) return '';
+
+  return String(value).startsWith('http')
+    ? String(value)
+    : `https://${value}`;
+}
+
+function firstNormalized(values) {
+  const value = firstValue(values);
+
+  if (!value) return '';
+
+  const text = String(value).trim();
+
+  try {
+    return new URL(text).hostname.toLowerCase();
+  } catch (error) {
+    return text
+      .replace(/^https?:\/\//, '')
+      .replace(/\/.*$/, '')
+      .toLowerCase();
+  }
+}
+
+function firstValue(values) {
+  return values
+    .map(signalValue)
+    .find(
+      (value) =>
+        typeof value === 'string' ||
+        value instanceof URL,
+    );
 }

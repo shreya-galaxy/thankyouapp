@@ -4,9 +4,17 @@ import {useEffect, useState} from "preact/hooks";
 import {trackThankYouClick} from '../../shared/analytics';
 import {limitText, trimText} from '../../shared/text';
 import {fetchActiveBlock} from '../../shared/blocks';
+import {claimExtensionRender} from '../../shared/render-once';
 
 export default () => {
-  render(<Extension />, document.body);
+  try {
+    if (!claimExtensionRender('referral')) return;
+
+    render(<Extension />, document.body);
+  } catch (error) {
+    console.error('Extension failed to render:', error);
+    // Graceful fallback - render nothing rather than breaking page
+  }
 };
 
 function Extension() {
@@ -106,7 +114,7 @@ function Extension() {
 
             {referralCode && (
               <s-button variant="secondary" onClick={trackCopyCode}>
-                Copy code
+               {referralCode}
               </s-button>
             )}
           </s-stack>

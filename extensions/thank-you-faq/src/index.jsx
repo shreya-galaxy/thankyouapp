@@ -4,9 +4,17 @@ import {useEffect, useState} from "preact/hooks";
 import {trackThankYouClick} from '../../shared/analytics';
 import {hasText, limitText} from '../../shared/text';
 import {fetchActiveBlock} from '../../shared/blocks';
+import {claimExtensionRender} from '../../shared/render-once';
 
 export default () => {
-  render(<Extension />, document.body);
+  try {
+    if (!claimExtensionRender('faq')) return;
+
+    render(<Extension />, document.body);
+  } catch (error) {
+    console.error('Extension failed to render:', error);
+    // Graceful fallback - render nothing rather than breaking page
+  }
 };
 
 function Extension() {
@@ -75,23 +83,19 @@ function Extension() {
               // border="base"
             >
               <s-stack gap="none">
-
-               <s-button
-                variant="secondary"
-                inlineSize="fill"
-                onClick={() => toggleFAQ(i)}
+              <s-button
+                onclick={() => toggleFAQ(i)}
               >
                 <s-stack direction="inline" gap="base">
-                <s-text type="strong">
-                  {limitText(faq.q, 72)}
-                </s-text>
+                  <s-text type="strong">
+                    {limitText(faq.q, 72)}
+                  </s-text>
 
-                <s-text>
-                  {isOpen ? '⌄' : '›'}
-                </s-text>
-              </s-stack>
+                  <s-text>
+                    {isOpen ? '⌄' : '›'}
+                  </s-text>
+                </s-stack>
               </s-button>
-
                {isOpen && (
                   <s-box padding="base" paddingBlockStart="small">
                     <s-stack gap="small">
