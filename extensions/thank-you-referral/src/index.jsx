@@ -102,15 +102,7 @@ function Extension() {
           <s-text>{shareLabel}</s-text>
 
           <s-stack direction="inline" gap="small">
-            {/* {referralLink && (
-              <s-button
-                href={referralLink}
-                target="_blank"
-                onClick={trackReferralClick}
-              >
-                {referralCta}
-              </s-button>
-            )} */}
+            
 
             {referralCode && (
               <s-button variant="secondary" onClick={trackCopyCode}>

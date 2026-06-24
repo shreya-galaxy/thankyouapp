@@ -59,6 +59,7 @@ function Extension() {
         <s-button
           href={s.subscription_cta_link}
           target="_blank"
+          rel="noopener noreferrer"
           onClick={handleClick}
         >
           {cta}

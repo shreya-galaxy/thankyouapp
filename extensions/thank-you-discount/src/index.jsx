@@ -48,10 +48,6 @@ function Extension() {
         <s-box padding="small" border="base" borderRadius="base">
           <s-text type="strong">{discountCode}</s-text>
         </s-box>
-
-        {/* <s-button onClick={handleCopy}>
-          {copied ? 'Copied!' : 'Copy Code'}
-        </s-button> */}
       </s-stack>
     </s-box>
   );

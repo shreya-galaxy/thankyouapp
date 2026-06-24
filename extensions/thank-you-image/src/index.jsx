@@ -116,6 +116,7 @@ function MediaBlock({block}) {
     <s-link
       href={showVideo ? videoUrl : imageLink}
       target="_blank"
+      rel="noopener noreferrer"
       onClick={handleClick}
     >
       {mediaImage}

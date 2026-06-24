@@ -64,53 +64,36 @@ function Extension() {
   if (!faqs.length) return null;
 
   return (
-    <s-box padding="base">
+    <s-box padding="base" border="base" borderRadius="base">
       <s-stack gap="small">
 
         {heading && (
-          <s-box paddingBlockEnd="small" paddingInlineStart="small">
+          <s-box padding="small" background="subdued" borderRadius="base">
             <s-text type="strong">{limitText(heading, 80)}</s-text>
           </s-box>
         )}
 
-        {faqs.map((faq, i) => {
-          const isOpen = openIndex === i;
-          return (
-            <s-box
-              key={i}
-              // borderRadius="large"
-              background="base"
-              // border="base"
-            >
-              <s-stack gap="none">
-              <s-button
-                onclick={() => toggleFAQ(i)}
-              >
-                <s-stack direction="inline" gap="base">
-                  <s-text type="strong">
-                    {limitText(faq.q, 72)}
-                  </s-text>
-
-                  <s-text>
-                    {isOpen ? '⌄' : '›'}
-                  </s-text>
-                </s-stack>
-              </s-button>
-               {isOpen && (
-                  <s-box padding="base" paddingBlockStart="small">
-                    <s-stack gap="small">
-                      <s-divider />
-                      <s-text>
-                        {faq.a}
-                      </s-text>
-                    </s-stack>
-                  </s-box>
-                )}
-
-              </s-stack>
+        {faqs.map((faq, i) => (
+          <s-details
+            key={i}
+            onToggle={(e) => {
+              // Only track when opening
+              if (e.target.open) {
+                trackThankYouClick('faq_click', {
+                  ctaText: faq.q,
+                  itemTitle: faq.q
+                });
+              }
+            }}
+          >
+            <s-summary>
+              <s-text type="strong">{limitText(faq.q, 72)}</s-text>
+            </s-summary>
+            <s-box padding="base" paddingBlockStart="small">
+              <s-text>{faq.a}</s-text>
             </s-box>
-          );
-        })}
+          </s-details>
+        ))}
 
       </s-stack>
     </s-box>

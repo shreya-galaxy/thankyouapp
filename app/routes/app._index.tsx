@@ -175,7 +175,7 @@ export default function Index() {
             >
               Manage app blocks
             </s-button>
-            <s-button href={checkoutCustomizeUrl} target="_blank">
+            <s-button href={checkoutCustomizeUrl} target="_blank" rel="noopener noreferrer">
               Open checkout editor
             </s-button>
           </s-stack>
