@@ -78,6 +78,7 @@ function Extension() {
           <s-button
             href={loyaltyLink}
             target="_blank"
+            rel="noopener noreferrer"
             onClick={trackLoyaltyClick}
           >
             {loyaltyCta}

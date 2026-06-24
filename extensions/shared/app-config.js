@@ -22,7 +22,7 @@ const BUILD_APP_URL =
 
 const FALLBACK_APP_URLS = [
   'https://thankyouapp-production.up.railway.app',
-  'https://contracting-stated-trailers-ctrl.trycloudflare.com',
+  'https://sat-energy-independently-intervals.trycloudflare.com',
 ];
 
 const DEFAULT_APP_URL = BUILD_APP_URL || FALLBACK_APP_URLS[0];

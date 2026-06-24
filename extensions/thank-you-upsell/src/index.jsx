@@ -158,10 +158,11 @@ function Extension() {
                     onClick={() =>
                       handleProductClick(product)
                     }
+                    rel="noopener noreferrer"
                   >
                     <s-image
                       src={product.image}
-                      alt={product.title}
+                      alt={`${product.title}${product.productType ? ` - ${product.productType}` : ''}`}
                       aspectRatio="1/1"
                       objectFit="cover"
                       inlineSize="fill"
