@@ -88,44 +88,133 @@ export function ThankYouBlockEditor({
     ? config.items
     : defaultFaqItems(template.defaultConfig);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    setIsSaving(true);
-    setSaveError("");
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
+  const form = event.currentTarget;
 
-    try {
-      const token = await shopify.idToken();
-      const response = await fetch(window.location.pathname + window.location.search, {
+  setSaveError("");
+
+  const formData = new FormData(form);
+
+  const heading = (formData.get("heading") as string)?.trim();
+  const mediaType = formData.get("mediaType") as string;
+  const imageUrl = (formData.get("imageUrl") as string)?.trim();
+  const videoUrl = (formData.get("videoUrl") as string)?.trim();
+  const videoThumbnail = (
+    formData.get("videoThumbnail") as string
+  )?.trim();
+
+  // Validate Image Block
+  if ((type === "image" || mediaType === "image")) {
+    if (!heading) {
+      setSaveError("Section header is required.");
+      return;
+    }
+
+    if (!imageUrl) {
+      setSaveError("Image URL is required.");
+      return;
+    }
+  }
+
+  // Validate Video Block
+  if ((type === "video" || mediaType === "video")) {
+    if (!heading) {
+      setSaveError("Video title is required.");
+      return;
+    }
+
+    if (!videoUrl) {
+      setSaveError("Video URL is required.");
+      return;
+    }
+
+    if (!videoThumbnail) {
+      setSaveError("Thumbnail image URL is required.");
+      return;
+    }
+  }
+
+  setIsSaving(true);
+
+  try {
+    const token = await shopify.idToken();
+
+    const response = await fetch(
+      window.location.pathname + window.location.search,
+      {
         method: "POST",
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: new FormData(form),
-      });
-      const result = (await response.json().catch(() => null)) as SaveResult | null;
-
-      // Surface explicit authentication errors to the user without throwing generic message
-      if (response.status === 401) {
-        setSaveError(result?.message || "Not authenticated. Please log in.");
-        return;
+        body: formData,
       }
+    );
 
-      // if (!response.ok || !result?.success) {
-      //   throw new Error(result?.message || JSON.stringify(response) || "Could not save block1.");
-      // }
+    const result = (await response.json().catch(() => null)) as
+      | SaveResult
+      | null;
 
-      navigate(result?.redirectTo || "/app/blocks");
-    } catch (error) {
-      console.error("SAVE REQUEST ERROR:", error);
-      setSaveError(
-        error instanceof Error ? error.message : "Could not save block2.",
-      );
-    } finally {
-      setIsSaving(false);
+    if (response.status === 401) {
+      setSaveError(result?.message || "Not authenticated. Please log in.");
+      return;
     }
-  };
+
+    if (!response.ok || !result?.success) {
+      setSaveError(result?.message || "Could not save block.");
+      return;
+    }
+
+    navigate(result?.redirectTo || "/app/blocks");
+  } catch (error) {
+    console.error("SAVE REQUEST ERROR:", error);
+    setSaveError(
+      error instanceof Error ? error.message : "Could not save block."
+    );
+  } finally {
+    setIsSaving(false);
+  }
+};
+
+  // const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  //   event.preventDefault();
+  //   const form = event.currentTarget;
+  //   setIsSaving(true);
+  //   setSaveError("");
+
+  //   try {
+  //     const token = await shopify.idToken();
+  //     const response = await fetch(window.location.pathname + window.location.search, {
+  //       method: "POST",
+  //       headers: {
+  //         Accept: "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: new FormData(form),
+  //     });
+  //     const result = (await response.json().catch(() => null)) as SaveResult | null;
+
+  //     // Surface explicit authentication errors to the user without throwing generic message
+  //     if (response.status === 401) {
+  //       setSaveError(result?.message || "Not authenticated. Please log in.");
+  //       return;
+  //     }
+
+  //     // if (!response.ok || !result?.success) {
+  //     //   throw new Error(result?.message || JSON.stringify(response) || "Could not save block1.");
+  //     // }
+
+  //     navigate(result?.redirectTo || "/app/blocks");
+  //   } catch (error) {
+  //     console.error("SAVE REQUEST ERROR:", error);
+  //     setSaveError(
+  //       error instanceof Error ? error.message : "Could not save block2.",
+  //     );
+  //   } finally {
+  //     setIsSaving(false);
+  //   }
+  // };
 
   return (
       <s-page
@@ -165,7 +254,7 @@ export function ThankYouBlockEditor({
 
             <section style={cardStyle}>
               <s-stack gap="base">
-                <s-heading>Content</s-heading>
+                {/* <s-heading>Content</s-heading> */}
                 {type === "faq" ? (
                   <FaqFields heading={config.heading} items={faqItems} />
                 ) : type === "image" || type === "video" || type === "media" ? (
@@ -545,6 +634,7 @@ function MediaFields({
             name="videoUrl"
             placeholder="Video URL"
             style={fieldStyle}
+            required
           />
           <input
             aria-label="Thumbnail image URL"
@@ -552,12 +642,13 @@ function MediaFields({
             name="videoThumbnail"
             placeholder="Thumbnail image URL"
             style={fieldStyle}
+            required
           />
-          <text>Upload your image for free using Shopify's Files page, within the Content tab.</text>
+          <text>Upload your image for free using Shopify&apos;s Files page, within the Content tab.</text>
         </>
       ) : (
         <>
-          <text>Upload your image for free using Shopify's Files page, within the Content tab.</text>
+          <text>Upload your image for free using Shopify&apos;s Files page, within the Content tab.</text>
           <input
             aria-label="Image URL"
             defaultValue={config.imageUrl || ""}
@@ -588,12 +679,12 @@ function MediaFields({
 function ReferralFields({config}: {config: ThankYouBlockConfig}) {
   return (
     <s-stack gap="base">
-      <s-box padding="base" borderWidth="base" borderRadius="base">
+      {/* <s-box padding="base" borderWidth="base" borderRadius="base">
         <s-text>
           You can use variables in the description: {"{friend_reward}"},{" "}
           {"{advocate_reward}"}, {"{referral_code}"}, and {"{referral_link}"}.
         </s-text>
-      </s-box>
+      </s-box> */}
 
       <TextField
         label="Title"
@@ -609,6 +700,10 @@ function ReferralFields({config}: {config: ThankYouBlockConfig}) {
           "Give your friends {friend_reward} off all products. Get {advocate_reward} off all products when they purchase with your discount code {referral_code}."
         }
       />
+      <s-text>
+          You can use variables in the description: {"{friend_reward}"},{" "}
+          {"{advocate_reward}"}, {"{referral_code}"}, and {"{referral_link}"}.
+        </s-text>
       <TextField
         label="Share now text"
         name="shareLabel"
@@ -750,6 +845,8 @@ function TextAreaField({
   );
 }
 
+// The preview panel is currently hidden, but this stays ready for re-enabling.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function BlockPreview({
   type,
   config,

@@ -59,6 +59,33 @@ export const action = async ({params, request}: ActionFunctionArgs) => {
     return redirect("/app/blocks");
   }
   try {
+    const duplicateBlock = await prisma.thankYouBlock.findFirst({
+      where: {
+        shop: session.shop,
+        type,
+        id: {
+          not: params.id,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (duplicateBlock) {
+      const message =
+        "This extension has already been added. Delete the duplicate block before saving.";
+
+      if (wantsJson) {
+        return responseJson(
+          {success: false, message, redirectTo: `/app/blocks/${duplicateBlock.id}`},
+          409,
+        );
+      }
+
+      return redirect(`/app/blocks/${duplicateBlock.id}`);
+    }
+
     await prisma.thankYouBlock.updateMany({
       where: {
         id: params.id,

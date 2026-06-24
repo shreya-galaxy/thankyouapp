@@ -2,9 +2,17 @@ import '@shopify/ui-extensions/preact';
 import {render} from 'preact';
 import {trackThankYouClick} from '../../shared/analytics';
 import {limitText, trimText} from '../../shared/text';
+import {claimExtensionRender} from '../../shared/render-once';
 
 export default () => {
-  render(<Extension />, document.body);
+  try {
+    if (!claimExtensionRender('subscription')) return;
+
+    render(<Extension />, document.body);
+  } catch (error) {
+    console.error('Extension failed to render:', error);
+    // Graceful fallback - render nothing rather than breaking page
+  }
 };
 
 function Extension() {
@@ -21,9 +29,11 @@ function Extension() {
       'Subscribe and get exclusive savings on every order',
     120,
   );
-  const cta = limitText(
-    trimText(s.subscription_cta_text) || 'Subscribe & Save',
-    24,
+  const cta = String(
+    limitText(
+      trimText(s.subscription_cta_text) || 'Subscribe & Save',
+      24,
+    )
   );
 
   const handleClick = () => {

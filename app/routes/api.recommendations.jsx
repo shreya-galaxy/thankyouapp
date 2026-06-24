@@ -13,7 +13,7 @@ export async function action({request}) {
     }
 
     const body = await request.json();
-    const {orderId} = body;
+    const {orderId, orderNumber, checkoutToken} = body;
     const shop =
       body.shop || process.env.SHOPIFY_SHOP_DOMAIN;
     const storefrontUrl =
@@ -40,78 +40,45 @@ export async function action({request}) {
     const {admin} =
       await unauthenticated.admin(shop);
 
-    const orderResponse = await admin.graphql(
-      `
-        query GetOrder($id: ID!) {
-          order(id: $id) {
-            id
-            name
-
-            lineItems(first: 50) {
-              nodes {
-                title
-
-                variant {
-                  product {
-                    id
-                    title
-
-                    metafield(
-                      namespace: "${RECOMMENDATION_METAFIELD.namespace}"
-                      key: "${RECOMMENDATION_METAFIELD.key}"
-                    ) {
-                      reference {
-                        ... on Product {
-                          id
-                          title
-                          handle
-                          onlineStoreUrl
-
-                          featuredImage {
-                            url
-                          }
-                        }
-                      }
-
-                      references(first: 10) {
-                        nodes {
-                          ... on Product {
-                            id
-                            title
-                            handle
-                            onlineStoreUrl
-
-                            featuredImage {
-                              url
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      `,
-      {
-        variables: {
-          id: adminOrderId,
-        },
-      },
+    const orderData = await fetchOrderById(
+      admin,
+      adminOrderId,
     );
 
-    const orderData = await orderResponse.json();
-
-    const order =
+    let order =
       orderData?.data?.order;
+
+    if (!order && checkoutToken) {
+      const orderSearchData = await fetchOrderByQuery(
+        admin,
+        `checkout_token:${checkoutToken}`,
+      );
+      order = orderSearchData?.data?.orders?.nodes?.[0];
+    }
+
+    if (!order && orderNumber) {
+      const query = String(orderNumber).startsWith('#')
+        ? `name:${orderNumber}`
+        : `name:#${orderNumber}`;
+      const orderSearchData = await fetchOrderByQuery(admin, query);
+      order = orderSearchData?.data?.orders?.nodes?.[0];
+    }
+
+    if (!order && orderData?.errors?.length) {
+      return responseJson({
+        success: false,
+        message: graphQLErrorMessage(orderData),
+        orderId,
+        adminOrderId,
+      });
+    }
 
     if (!order) {
       return responseJson({
         success: false,
         message: 'Order not found',
-        order: orderData,
+        orderId,
+        adminOrderId,
       });
     }
 
@@ -181,11 +148,154 @@ export async function action({request}) {
   }
 }
 
+async function fetchOrderById(admin, adminOrderId) {
+  const orderResponse = await admin.graphql(
+      `
+        query GetOrder($id: ID!) {
+          order(id: $id) {
+            id
+            name
+
+            lineItems(first: 50) {
+              nodes {
+                title
+
+                variant {
+                  product {
+                    id
+                    title
+
+                    metafield(
+                      namespace: "${RECOMMENDATION_METAFIELD.namespace}"
+                      key: "${RECOMMENDATION_METAFIELD.key}"
+                    ) {
+                      reference {
+                        ... on Product {
+                          id
+                          title
+                          handle
+                          onlineStoreUrl
+
+                          featuredImage {
+                            url
+                          }
+                        }
+                      }
+
+                      references(first: 10) {
+                        nodes {
+                          ... on Product {
+                            id
+                            title
+                            handle
+                            onlineStoreUrl
+
+                            featuredImage {
+                              url
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      `,
+      {
+        variables: {
+          id: adminOrderId,
+        },
+      },
+    );
+
+  return orderResponse.json();
+}
+
+async function fetchOrderByQuery(admin, query) {
+  const orderResponse = await admin.graphql(
+    `
+      query FindOrder($query: String!) {
+        orders(first: 1, query: $query, sortKey: CREATED_AT, reverse: true) {
+          nodes {
+            id
+            name
+
+            lineItems(first: 50) {
+              nodes {
+                title
+
+                variant {
+                  product {
+                    id
+                    title
+
+                    metafield(
+                      namespace: "${RECOMMENDATION_METAFIELD.namespace}"
+                      key: "${RECOMMENDATION_METAFIELD.key}"
+                    ) {
+                      reference {
+                        ... on Product {
+                          id
+                          title
+                          handle
+                          onlineStoreUrl
+
+                          featuredImage {
+                            url
+                          }
+                        }
+                      }
+
+                      references(first: 10) {
+                        nodes {
+                          ... on Product {
+                            id
+                            title
+                            handle
+                            onlineStoreUrl
+
+                            featuredImage {
+                              url
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `,
+    {
+      variables: {
+        query,
+      },
+    },
+  );
+
+  return orderResponse.json();
+}
+
 function normalizeOrderId(orderId) {
   return orderId.replace(
     'gid://shopify/OrderIdentity/',
     'gid://shopify/Order/',
   );
+}
+
+function graphQLErrorMessage(data) {
+  const message = data.errors
+    .map((error) => error?.message)
+    .filter(Boolean)
+    .join(', ');
+
+  return message || 'Could not load order from Shopify';
 }
 
 function responseJson(data) {
@@ -204,7 +314,7 @@ function responseJson(data) {
           'POST, OPTIONS',
 
         'Access-Control-Allow-Headers':
-          'Content-Type',
+          'Content-Type, bypass-tunnel-reminder, ngrok-skip-browser-warning',
       },
     },
   );

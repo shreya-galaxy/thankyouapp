@@ -57,6 +57,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function BlocksPage() {
   const { templates, blocks } = useLoaderData<typeof loader>();
   const shopify = useAppBridge();
+  const existingTypes = new Set(blocks.map((block) => block.type));
 
   const handleDelete = async (blockId: string, blockName: string) => {
     const confirmed = window.confirm(
@@ -79,16 +80,11 @@ export default function BlocksPage() {
       body: formData,
     });
 
-    const result = (await response.json().catch(() => null)) as
-      | {success?: boolean}
-      | null;
-
-    window.location.reload();
-    // if (response.ok && result?.success) {
-    //   window.location.reload();
-    // } else {
-    //   alert("Failed to delete block");
-    // }
+    if (response.ok) {
+      window.location.reload();
+    } else {
+      alert("Failed to delete block");
+    }
   };
 
   return (
@@ -111,9 +107,15 @@ export default function BlocksPage() {
                   <s-heading>{template.title}</s-heading>
                   <s-paragraph>{template.description}</s-paragraph>
                 </s-stack>
-                <s-button href={`/app/blocks/new?type=${template.type}`}>
-                  Add block
-                </s-button>
+                {existingTypes.has(template.type) ? (
+                  <s-button disabled>
+                    Already added
+                  </s-button>
+                ) : (
+                  <s-button href={`/app/blocks/new?type=${template.type}`}>
+                    Add block
+                  </s-button>
+                )}
               </s-stack>
             </s-box>
           ))}
@@ -178,64 +180,97 @@ export default function BlocksPage() {
 }
 
 function TemplatePreview({ type }: { type: string }) {
-  if (type === "faq") {
-    return (
-      <s-box padding="base" borderWidth="base" borderRadius="base">
-        <s-stack gap="small">
-          <s-text type="strong">What is your policy on returns? +</s-text>
-          <s-text type="strong">What are your delivery times? +</s-text>
-          <s-text type="strong">How can I get assistance with my order? +</s-text>
-        </s-stack>
-      </s-box>
-    );
-  }
-
-  if (type === "image" || type === "video" || type === "media") {
-    return (
-      <s-box padding="base" borderWidth="base" borderRadius="base">
-        <s-box minBlockSize="120px" background="subdued" borderRadius="base" />
-      </s-box>
-    );
-  }
-
-  if (type === "referral") {
-    return (
-      <s-box padding="base" borderWidth="base" borderRadius="base">
-        <s-stack gap="small">
-          <s-text type="strong">Refer friends. Get rewards.</s-text>
-          <s-text>Give 15% off and earn a reward after their purchase.</s-text>
-          <s-stack direction="inline" gap="small">
-            {/* <s-button>Share</s-button> */}
-            <s-button variant="secondary">Copy code</s-button>
-          </s-stack>
-        </s-stack>
-      </s-box>
-    );
-  }
-
-  if (type === "loyalty") {
-    return (
-      <s-box padding="base" borderWidth="base" borderRadius="base">
-        <s-stack gap="small">
-          <s-box padding="small" background="subdued" borderRadius="base">
-            <s-text type="strong">2x points</s-text>
-          </s-box>
-          <s-text>Join our loyalty program and unlock rewards.</s-text>
-          <s-button>Join now</s-button>
-        </s-stack>
-      </s-box>
-    );
-  }
+  const previewImages: Record<string, string> = {
+    faq: "/faq-preview.png",
+    image: "/image-preview.png",
+    video: "/video-preview.png",
+    media: "media-preview.png",
+    referral: "/referral-preview.png",
+    loyalty: "/loyalty-preview.png",
+    upsell: "/upsell-preview.png",
+  };
 
   return (
-    <s-box padding="base" borderWidth="base" borderRadius="base">
-      <s-grid gap="small" gridTemplateColumns="1fr 1fr">
-        <s-box minBlockSize="90px" background="subdued" borderRadius="base" />
-        <s-box minBlockSize="90px" background="subdued" borderRadius="base" />
-      </s-grid>
-    </s-box>
+    <div
+      style={{
+        border: "1px solid #dfe3e8",
+        borderRadius: "8px",
+        overflow: "hidden",
+      }}
+    >
+      <img
+        src={previewImages[type]}
+        alt={`${type} preview`}
+        style={{
+          width: "100%",
+          height: "140px",
+          objectFit: "fill",
+          display: "block",
+        }}
+      />
+    </div>
   );
 }
+
+// function TemplatePreview({ type }: { type: string }) {
+//   if (type === "faq") {
+//     return (
+//       <s-box padding="base" borderWidth="base" borderRadius="base">
+//         <s-stack gap="small">
+//           <s-text type="strong">What is your policy on returns? +</s-text>
+//           <s-text type="strong">What are your delivery times? +</s-text>
+//           <s-text type="strong">How can I get assistance with my order? +</s-text>
+//         </s-stack>
+//       </s-box>
+//     );
+//   }
+
+//   if (type === "image" || type === "video" || type === "media") {
+//     return (
+//       <s-box padding="base" borderWidth="base" borderRadius="base">
+//         <s-box minBlockSize="120px" background="subdued" borderRadius="base" />
+//       </s-box>
+//     );
+//   }
+
+//   if (type === "referral") {
+//     return (
+//       <s-box padding="base" borderWidth="base" borderRadius="base">
+//         <s-stack gap="small">
+//           <s-text type="strong">Refer friends. Get rewards.</s-text>
+//           <s-text>Give 15% off and earn a reward after their purchase.</s-text>
+//           <s-stack direction="inline" gap="small">
+//             {/* <s-button>Share</s-button> */}
+//             <s-button variant="secondary">Copy code</s-button>
+//           </s-stack>
+//         </s-stack>
+//       </s-box>
+//     );
+//   }
+
+//   if (type === "loyalty") {
+//     return (
+//       <s-box padding="base" borderWidth="base" borderRadius="base">
+//         <s-stack gap="small">
+//           <s-box padding="small" background="subdued" borderRadius="base">
+//             <s-text type="strong">2x points</s-text>
+//           </s-box>
+//           <s-text>Join our loyalty program and unlock rewards.</s-text>
+//           <s-button>Join now</s-button>
+//         </s-stack>
+//       </s-box>
+//     );
+//   }
+
+//   return (
+//     <s-box padding="base" borderWidth="base" borderRadius="base">
+//       <s-grid gap="small" gridTemplateColumns="1fr 1fr">
+//         <s-box minBlockSize="90px" background="subdued" borderRadius="base" />
+//         <s-box minBlockSize="90px" background="subdued" borderRadius="base" />
+//       </s-grid>
+//     </s-box>
+//   );
+// }
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", {

@@ -2,9 +2,17 @@ import '@shopify/ui-extensions/preact';
 import {render} from 'preact';
 import {useState} from 'preact/hooks';
 import {limitText, trimText} from '../../shared/text';
+import {claimExtensionRender} from '../../shared/render-once';
 
 export default () => {
-  render(<Extension />, document.body);
+  try {
+    if (!claimExtensionRender('discount')) return;
+
+    render(<Extension />, document.body);
+  } catch (error) {
+    console.error('Extension failed to render:', error);
+    // Graceful fallback - render nothing rather than breaking page
+  }
 };
 
 function Extension() {

@@ -6,7 +6,12 @@ import {limitText, trimText} from '../../shared/text';
 import {fetchActiveBlock} from '../../shared/blocks';
 
 export default () => {
-  render(<Extension />, document.body);
+  try {
+    render(<Extension />, document.body);
+  } catch (error) {
+    console.error('Extension failed to render:', error);
+    // Graceful fallback - render nothing rather than breaking page
+  }
 };
 
 function Extension() {

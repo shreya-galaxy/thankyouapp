@@ -4,9 +4,17 @@ import {useEffect, useState} from "preact/hooks";
 import {limitText, trimText} from '../../shared/text';
 import {trackThankYouClick} from '../../shared/analytics';
 import {fetchActiveBlock} from '../../shared/blocks';
+import {claimExtensionRender} from '../../shared/render-once';
 
 export default () => {
-  render(<Extension />, document.body);
+  try {
+    if (!claimExtensionRender('video')) return;
+
+    render(<Extension />, document.body);
+  } catch (error) {
+    console.error('Extension failed to render:', error);
+    // Graceful fallback - render nothing rather than breaking page
+  }
 };
 
 function Extension() {
@@ -48,14 +56,21 @@ function Extension() {
   );
 }
 
+/**
+ * @param {string} type
+ * @returns {Promise<any>}
+ */
 function fetchBlock(type) {
   return fetchActiveBlock(type).catch((error) => {
     console.error(`Could not load ${type} thank-you block`, error);
-
     return null;
   });
 }
 
+/**
+ * @param {{block: any}} props
+ * @returns {JSX.Element}
+ */
 function MediaBlock({block}) {
   const config = block.config || {};
   const heading = limitText(
