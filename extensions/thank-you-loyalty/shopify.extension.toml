@@ -14,6 +14,3 @@ target = "purchase.thank-you.block.render"
 api_access = true
 network_access = true
 
-[[extensions.metafields]]
-namespace = "$app"
-key = "requestedFreeGift"

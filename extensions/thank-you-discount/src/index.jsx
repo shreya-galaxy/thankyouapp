@@ -23,19 +23,6 @@ function Extension() {
     32,
   );
 
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(discountCode);
-      setCopied(true);
-
-      setTimeout(() => {
-        setCopied(false);
-      }, 2000);
-    } catch (error) {
-      console.error('Failed to copy code', error);
-    }
-  };
-
   return (
     <s-box padding="base" border="base" borderRadius="base">
       <s-stack gap="small">

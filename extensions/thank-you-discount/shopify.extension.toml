@@ -16,10 +16,6 @@ target = "purchase.checkout.block.render"
 api_access = true
 network_access = true
 
-[[metafields]]
-namespace = "$app"
-key = "requestedFreeGift"
-
 [settings]
 
 [[settings.fields]]

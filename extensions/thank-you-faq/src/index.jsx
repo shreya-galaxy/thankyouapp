@@ -60,7 +60,19 @@ function Extension() {
     setOpenIndex(isOpen ? null : index);
   };
 
-  if (loading) return null;
+  if (loading) {
+    return (
+      <s-stack gap="base">
+        <s-box padding="base" border="base" borderRadius="base">
+          <s-stack gap="base">
+            <s-skeleton-paragraph />
+            <s-skeleton-paragraph />
+          </s-stack>
+        </s-box>
+      </s-stack>
+    );
+  }
+  
   if (!faqs.length) return null;
 
   return (

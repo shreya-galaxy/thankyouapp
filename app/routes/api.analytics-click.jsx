@@ -7,10 +7,9 @@ export async function action({request}) {
       return responseJson({});
     }
 
-    const body = await request.json();
+    const body = await parseRequestBody(request);
     const {
-      eventType = 'subscription',
-      shop,
+      eventType = 'subscription_click',
       orderId,
       orderNumber,
       ctaText,
@@ -20,6 +19,7 @@ export async function action({request}) {
       itemUrl,
       source,
     } = body;
+    const shop = normalizeShop(body.shop);
 
     if (!shop) {
       return responseJson({
@@ -80,4 +80,33 @@ function responseJson(data) {
       },
     },
   );
+}
+
+async function parseRequestBody(request) {
+  const contentType = request.headers.get('content-type') || '';
+
+  if (contentType.includes('application/json')) {
+    return request.json();
+  }
+
+  const text = await request.text();
+
+  return text ? JSON.parse(text) : {};
+}
+
+function normalizeShop(value) {
+  if (!value) return '';
+
+  const text = String(value).trim();
+
+  if (!text) return '';
+
+  try {
+    return new URL(text).hostname.toLowerCase();
+  } catch (error) {
+    return text
+      .replace(/^https?:\/\//, '')
+      .replace(/\/.*$/, '')
+      .toLowerCase();
+  }
 }

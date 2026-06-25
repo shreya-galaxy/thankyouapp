@@ -136,7 +136,6 @@ function Extension() {
         <s-box padding="base" border="base" borderRadius="base">
           <s-stack gap="small">
             <s-text>{heading}</s-text>
-            {/* <s-text>{subtitle}</s-text> */}
           </s-stack>
         </s-box>
         <s-grid
@@ -178,6 +177,7 @@ function Extension() {
                   onClick={() =>
                     handleProductClick(product)
                   }
+                  rel="noopener noreferrer"
                 >
                   {limitText('View product', 24)}
                 </s-link>
@@ -196,12 +196,10 @@ async function fetchRecommendations(payload) {
 
   for (const url of apiUrls('/api/recommendations')) {
     try {
-      const response = await fetch(url, {
+      const response = await fetchWithTimeout(url, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'bypass-tunnel-reminder': 'true',
-          'ngrok-skip-browser-warning': 'true',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload),
       });
