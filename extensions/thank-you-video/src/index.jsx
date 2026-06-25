@@ -45,7 +45,20 @@ function Extension() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading || !blocks.length) return null;
+  if (loading) {
+    return (
+      <s-stack gap="base">
+        <s-box padding="base" border="base" borderRadius="base">
+          <s-stack gap="base">
+            <s-skeleton-paragraph />
+            <s-skeleton-paragraph />
+          </s-stack>
+        </s-box>
+      </s-stack>
+    );
+  }
+
+  if (!blocks.length) return null;
 
   return (
     <s-stack gap="base">

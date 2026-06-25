@@ -13,6 +13,3 @@ api_access = true
 network_access = true
 multiple = false
 
-[[metafields]]
-namespace = "$app"
-key = "requestedFreeGift"

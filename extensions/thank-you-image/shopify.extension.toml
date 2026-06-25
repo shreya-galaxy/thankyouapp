@@ -33,6 +33,3 @@ network_access = true
 # products, customers, and more. Learn more:
 # https://shopify.dev/docs/api/checkout-ui-extensions/latest/configuration#metafields
 
-[[extensions.metafields]]
-namespace = "$app"
-key = "requestedFreeGift"
