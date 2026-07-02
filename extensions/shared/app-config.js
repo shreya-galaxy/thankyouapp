@@ -40,7 +40,6 @@ const BUILD_APP_URL =
   '';
 
 const FALLBACK_APP_URLS = [
-  'https://derek-mixer-lens-injection.trycloudflare.com',
   'https://thankyouapp-production-a309.up.railway.app',
 ];
 
