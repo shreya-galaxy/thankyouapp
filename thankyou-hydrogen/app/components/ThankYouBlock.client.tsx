@@ -10,6 +10,8 @@ type BlocksApiResponse = {
   };
 };
 
+const DEFAULT_APP_URL = 'https://thankyouapp-production-a309.up.railway.app';
+
 declare global {
   interface Window {
     THANKYOU_APP_URL?: string;
@@ -26,7 +28,7 @@ export default function ThankYouBlockClient({type, shop}:{type:'faq'|'image'|'vi
       window.THANKYOU_APP_URL ||
       window.PUBLIC_APP_URL ||
       (import.meta as any).env?.PUBLIC_APP_URL ||
-      '';
+      DEFAULT_APP_URL;
     const shopDomain = shop || window.location.hostname;
     const candidates: string[] = [];
 
