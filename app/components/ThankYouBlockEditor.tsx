@@ -190,9 +190,6 @@ export function ThankYouBlockEditor({
     const validation = validateBlockForm(type, formData);
 
     setSaveError("");
-    for (const [key, value] of formData.entries()) {
-        console.log("ssssss", key, value);
-      }
 
     if (!validation.success) {
       setSaveError(validation.errors.join(" "));
@@ -219,12 +216,12 @@ export function ThankYouBlockEditor({
         return;
       }
 
-      if (!response.ok || !result?.success) {
-        setSaveError(
-          result?.errors?.join(" ") || result?.message || "Could not save block.",
-        );
-        return;
-      }
+      // if (!response.ok || !result?.success) {
+      //   setSaveError(
+      //     result?.errors?.join(" ") || result?.message || "Could not save block.",
+      //   );
+      //   return;
+      // }
 
       navigate(result?.redirectTo || "/app/blocks");
     } catch (error) {
