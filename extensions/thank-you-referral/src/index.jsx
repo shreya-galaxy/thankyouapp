@@ -13,7 +13,6 @@ export default () => {
     render(<Extension />, document.body);
   } catch (error) {
     console.error('Extension failed to render:', error);
-    // Graceful fallback - render nothing rather than breaking page
   }
 };
 
@@ -46,19 +45,18 @@ function Extension() {
       </s-stack>
     );
   }
+
   if (!config) return null;
 
   const referralHeading = limitText(
     trimText(config.title) || 'Refer friends. Get rewards.',
     48,
   );
-  const referralText = limitText(
+  const referralContent = parseRichText(
     replaceReferralVariables(
-      trimText(config.description) ||
-        'Invite friends and earn rewards when they purchase.',
+      config.description || "",
       config,
     ),
-    180,
   );
   const referralCta = limitText(
     trimText(config.shareText) || 'Share',
@@ -109,16 +107,21 @@ function Extension() {
         <s-box padding="small" background="subdued" borderRadius="base">
           <s-text type="strong">{referralHeading}</s-text>
         </s-box>
-        <s-text>{referralText}</s-text>
+
+        <s-stack gap="small">
+          {renderRichText(
+            referralContent,
+            trackReferralClick,
+          )}
+        </s-stack>
+
         <s-stack gap="small">
           <s-text>{shareLabel}</s-text>
 
           <s-stack direction="inline" gap="small">
-            
-
             {referralCode && (
               <s-button variant="secondary" onClick={trackCopyCode}>
-               {referralCode}
+                {referralCode}
               </s-button>
             )}
           </s-stack>
@@ -134,4 +137,150 @@ function replaceReferralVariables(value, config) {
     .replaceAll('{advocate_reward}', trimText(config.advocateReward) || '$10')
     .replaceAll('{referral_code}', trimText(config.referralCode) || 'THANKYOU15')
     .replaceAll('{referral_link}', trimText(config.referralLink));
+}
+
+function parseRichText(value) {
+  if (!value) return [];
+
+  try {
+    let parsed = JSON.parse(value);
+
+    while (typeof parsed === "string") {
+      parsed = JSON.parse(parsed);
+    }
+
+    if (Array.isArray(parsed)) return parsed;
+    return parsed?.content || [];
+  } catch {
+    return [
+      {
+        type: "paragraph",
+        content: [
+          {
+            type: "text",
+            text: cleanText(value),
+          },
+        ],
+      },
+    ];
+  }
+}
+
+function renderRichText(nodes = [], onLinkPress) {
+  return nodes.map((node, index) => (
+    <RichTextBlock
+      key={index}
+      node={node}
+      onLinkPress={onLinkPress}
+    />
+  ));
+}
+
+function RichTextBlock({node, onLinkPress}) {
+  switch (node.type) {
+    case "heading":
+      return (
+        <s-text type="strong">
+          {node.text || renderInline(node.content, onLinkPress)}
+        </s-text>
+      );
+
+    case "paragraph":
+      return (
+        <s-text>
+          {renderInline(node.content, onLinkPress)}
+        </s-text>
+      );
+
+    case "bulletList":
+      return (
+        <>
+          {node.content?.map((item, index) => (
+            <s-text key={index}>
+              • {renderInline(getListItemContent(item), onLinkPress)}
+            </s-text>
+          ))}
+        </>
+      );
+
+    case "orderedList":
+      return (
+        <>
+          {node.content?.map((item, index) => (
+            <s-text key={index}>
+              {index + 1}. {renderInline(getListItemContent(item), onLinkPress)}
+            </s-text>
+          ))}
+        </>
+      );
+
+    case "bullet":
+      return (
+        <s-text>
+          • {renderInline(node.content, onLinkPress)}
+        </s-text>
+      );
+
+    case "number":
+      return (
+        <s-text>
+          {node.index || 1}. {renderInline(node.content, onLinkPress)}
+        </s-text>
+      );
+
+    default:
+      return null;
+  }
+}
+
+function renderInline(nodes = [], onLinkPress) {
+  return nodes.map((node, index) => {
+    if (node.type === "hardBreak") return " ";
+
+    if (node.type !== "text") {
+      return node.content
+        ? renderInline(node.content, onLinkPress)
+        : null;
+    }
+
+    let content = node.text || "";
+
+    if (node.marks?.some((mark) => mark.type === "bold")) {
+      content = (
+        <s-text type="strong">
+          {content}
+        </s-text>
+      );
+    }
+
+    const link = node.marks?.find((mark) => mark.type === "link");
+
+    if (link?.attrs?.href) {
+      content = (
+        <s-link
+          to={link.attrs.href}
+          onPress={onLinkPress}
+        >
+          {content}
+        </s-link>
+      );
+    }
+
+    return <>{content}</>;
+  });
+}
+
+function getListItemContent(item) {
+  return item?.content?.[0]?.content || item?.content || [];
+}
+
+function cleanText(value) {
+  return trimText(
+    String(value || "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">"),
+  );
 }

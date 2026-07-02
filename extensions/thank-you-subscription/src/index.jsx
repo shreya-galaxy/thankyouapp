@@ -1,7 +1,9 @@
 import '@shopify/ui-extensions/preact';
 import {render} from 'preact';
+import {useEffect, useState} from 'preact/hooks';
 import {trackThankYouClick} from '../../shared/analytics';
 import {limitText, trimText} from '../../shared/text';
+import {fetchActiveBlock} from '../../shared/blocks';
 import {claimExtensionRender} from '../../shared/render-once';
 
 export default () => {
@@ -16,36 +18,79 @@ export default () => {
 };
 
 function Extension() {
-  const s = shopify.settings.current;
+  const [config, setConfig] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [tone, setTone] = useState('subdued');
 
-  if (!s.subscription_cta_link) return null;
+  useEffect(() => {
+    fetchActiveBlock('subscription')
+      .then((block) => setConfig(block?.config || null))
+      .catch((error) => {
+        console.error(error);
+        setConfig(null);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <s-box padding="base" border="base" borderRadius="base">
+        <s-stack gap="base">
+          <s-skeleton-paragraph />
+          <s-skeleton-paragraph />
+        </s-stack>
+      </s-box>
+    );
+  }
+
+  if (!config) return null;
 
   const heading = limitText(
-    trimText(s.subscription_heading1) || 'Never run out again',
+    trimText(config.subscriptionHeading) || 'Never run out again',
     48,
   );
   const body = limitText(
-    trimText(s.subscription_heading2) ||
+    trimText(config.subscriptionBody) ||
       'Subscribe and get exclusive savings on every order',
     120,
   );
   const cta = String(
     limitText(
-      trimText(s.subscription_cta_text) || 'Subscribe & Save',
+      trimText(config.buttonText) || 'Subscribe',
       24,
     )
   );
+  const placeholder = limitText(
+    trimText(config.emailPlaceholder) || 'Email address',
+    60,
+  );
+  const successMessage = limitText(
+    trimText(config.successMessage) || 'Thanks for subscribing.',
+    100,
+  );
 
-  const handleClick = () => {
-    const payload = {
+  const handleSubmit = () => {
+    const normalizedEmail = trimText(email).toLowerCase();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setTone('critical');
+      setMessage('Enter a valid email address.');
+      return;
+    }
+
+    trackThankYouClick('subscription_signup', {
       ctaText: cta,
-      ctaLink: s.subscription_cta_link,
-    };
+      itemId: normalizedEmail,
+      itemTitle: heading,
+      source: 'thank_you_subscription_signup',
+      payloadEmail: normalizedEmail,
+    });
 
-    trackThankYouClick(
-      'subscription_click',
-      payload,
-    );
+    setTone('success');
+    setMessage(successMessage);
+    setEmail('');
   };
 
   return (
@@ -56,14 +101,16 @@ function Extension() {
           <s-text>{body}</s-text>
         </s-stack>
 
-        <s-button
-          href={s.subscription_cta_link}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={handleClick}
-        >
-          {cta}
-        </s-button>
+        <s-text-field
+          label={placeholder}
+          type="email"
+          value={email}
+          onInput={(event) => setEmail(event.target.value)}
+        />
+
+        <s-button onClick={handleSubmit}>{cta}</s-button>
+
+        {message && <s-text color={tone}>{message}</s-text>}
       </s-stack>
     </s-box>
   );

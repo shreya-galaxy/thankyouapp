@@ -187,6 +187,8 @@ function TemplatePreview({ type }: { type: string }) {
     media: "media-preview.png",
     referral: "/referral-preview.png",
     loyalty: "/loyalty-preview.png",
+    discount: "/referral-preview.png",
+    subscription: "/loyalty-preview.png",
     upsell: "/upsell-preview.png",
   };
 
@@ -204,7 +206,7 @@ function TemplatePreview({ type }: { type: string }) {
         style={{
           width: "100%",
           height: "140px",
-          objectFit: "fill",
+          objectFit: "contain",
           display: "block",
         }}
       />

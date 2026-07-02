@@ -77,37 +77,41 @@ function Extension() {
 
   return (
     <s-box padding="base" border="base" borderRadius="base">
-      <s-stack gap="small">
+      <s-stack gap="none">
 
-        {heading && (
-          <s-box padding="small" background="subdued" borderRadius="base">
-            <s-text type="strong">{limitText(heading, 80)}</s-text>
+    {heading && (
+      <s-box padding="small" background="subdued" borderRadius="base">
+          <s-text type="strong">{heading}</s-text>
+      </s-box>
+    )}
+
+    {faqs.map((faq, i) => (
+      <s-box
+        key={i}
+        paddingBlock="base"
+      >
+        <s-details
+          onToggle={(e) => {
+            if (e.target.open) {
+              trackThankYouClick("faq_click", {
+                ctaText: faq.q,
+                itemTitle: faq.q,
+              });
+            }
+          }}
+        >
+          <s-summary>
+            <s-text type="strong">{limitText(faq.q, 72)}</s-text>
+          </s-summary>
+
+          <s-box paddingBlockStart="base">
+            <s-text>{faq.a}</s-text>
           </s-box>
-        )}
+        </s-details>
+      </s-box>
+    ))}
 
-        {faqs.map((faq, i) => (
-          <s-details
-            key={i}
-            onToggle={(e) => {
-              // Only track when opening
-              if (e.target.open) {
-                trackThankYouClick('faq_click', {
-                  ctaText: faq.q,
-                  itemTitle: faq.q
-                });
-              }
-            }}
-          >
-            <s-summary>
-              <s-text type="strong">{limitText(faq.q, 72)}</s-text>
-            </s-summary>
-            <s-box padding="base" paddingBlockStart="small">
-              <s-text>{faq.a}</s-text>
-            </s-box>
-          </s-details>
-        ))}
-
-      </s-stack>
+  </s-stack>
     </s-box>
   );
 }

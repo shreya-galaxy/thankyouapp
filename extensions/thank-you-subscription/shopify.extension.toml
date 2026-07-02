@@ -44,38 +44,3 @@ network_access = true
 # type = "single_line_text_field"
 # name = "Banner title"
 # description = "Enter a title for the banner"
-
-[[extensions.settings.fields]]
-key = "subscription_heading1"
-type = "single_line_text_field"
-name = "Subscription Heading 1"
-default = "Never run out again"
-[[extensions.settings.fields.validations]]
-name = "max"
-value = "60"
-
-[[extensions.settings.fields]]
-key = "subscription_heading2"
-type = "single_line_text_field"
-name = "Subscription Heading 2"
-default = "Subscribe and get exclusive savings on every order"
-[[extensions.settings.fields.validations]]
-name = "max"
-value = "120"
-
-[[extensions.settings.fields]]
-key = "subscription_cta_text"
-type = "single_line_text_field"
-name = "Subscription CTA Text"
-default = "Subscribe & Save"
-[[extensions.settings.fields.validations]]
-name = "max"
-value = "24"
-
-[[extensions.settings.fields]]
-key = "subscription_cta_link"
-type = "single_line_text_field"
-name = "Subscription CTA Link"
-[[extensions.settings.fields.validations]]
-name = "max"
-value = "2048"
