@@ -748,9 +748,9 @@ function ImageSourceField({
       return;
     }
 
-    if (file.size > 48 * 1024) {
+    if (file.size > 1000 * 1024) {
       setError(
-        "Uploaded image must be smaller than 48 KB. Use a Shopify Files URL for larger images.",
+        "Uploaded image must be smaller than 1000 KB. Use a Shopify Files URL for larger images.",
       );
       event.target.value = "";
       return;
