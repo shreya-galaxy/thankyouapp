@@ -7,6 +7,7 @@ import {
   configFromForm,
   isBlockType,
   parseBlockConfig,
+  validateBlockForm,
 } from "../models/thankYouBlock";
 
 export const loader = async ({params, request}: LoaderFunctionArgs) => {
@@ -58,6 +59,20 @@ export const action = async ({params, request}: ActionFunctionArgs) => {
 
     return redirect("/app/blocks");
   }
+
+  const validation = validateBlockForm(type, formData);
+
+  if (!validation.success) {
+    if (wantsJson) {
+      return responseJson(
+        {success: false, message: validation.message, errors: validation.errors},
+        400,
+      );
+    }
+
+    return redirect(`/app/blocks/${params.id}`);
+  }
+
   try {
     const duplicateBlock = await prisma.thankYouBlock.findFirst({
       where: {

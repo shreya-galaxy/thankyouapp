@@ -8,6 +8,7 @@ import {
   blockTemplates,
   configFromForm,
   isBlockType,
+  validateBlockForm,
   type ThankYouBlockConfig,
 } from "../models/thankYouBlock";
 
@@ -54,6 +55,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     return redirect("/app/blocks");
+  }
+
+  const validation = validateBlockForm(type, formData);
+
+  if (!validation.success) {
+    if (wantsJson) {
+      return responseJson(
+        {success: false, message: validation.message, errors: validation.errors},
+        400,
+      );
+    }
+
+    return redirect(`/app/blocks/new?type=${type}`);
   }
 
   const existingBlock = await prisma.thankYouBlock.findFirst({

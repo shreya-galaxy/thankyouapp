@@ -5,7 +5,9 @@ export type ThankYouBlockType =
   | "media"
   | "upsell"
   | "referral"
-  | "loyalty";
+  | "loyalty"
+  | "discount"
+  | "subscription";
 
 export type ThankYouBlockConfig = {
   heading?: string;
@@ -30,6 +32,11 @@ export type ThankYouBlockConfig = {
   advocateReward?: string;
   pointsText?: string;
   validUntil?: string;
+  discountCode?: string;
+  subscriptionHeading?: string;
+  subscriptionBody?: string;
+  emailPlaceholder?: string;
+  successMessage?: string;
 };
 
 export const blockTemplates = {
@@ -81,6 +88,17 @@ export const blockTemplates = {
     defaultName: "Upsell Products",
     defaultConfig: {},
   },
+  discount: {
+    type: "discount",
+    title: "Discount Code",
+    description: "Show a discount code for a future purchase.",
+    defaultName: "Discount Code",
+    defaultConfig: {
+      title: "Discount code",
+      description: "Use this code on your next purchase:",
+      discountCode: "",
+    },
+  },
   referral: {
     type: "referral",
     title: "Referral Offer",
@@ -113,6 +131,19 @@ export const blockTemplates = {
       validUntil: "",
     },
   },
+  subscription: {
+    type: "subscription",
+    title: "Subscription Signup",
+    description: "Collect subscription interest from thank-you page visitors.",
+    defaultName: "Subscription Signup",
+    defaultConfig: {
+      subscriptionHeading: "Never run out again",
+      subscriptionBody: "Subscribe and get exclusive savings on every order.",
+      buttonText: "Subscribe",
+      emailPlaceholder: "Email address",
+      successMessage: "Thanks for subscribing.",
+    },
+  },
 } as const;
 
 export function isBlockType(value: unknown): value is ThankYouBlockType {
@@ -123,7 +154,9 @@ export function isBlockType(value: unknown): value is ThankYouBlockType {
     value === "media" ||
     value === "upsell" ||
     value === "referral" ||
-    value === "loyalty"
+    value === "loyalty" ||
+    value === "discount" ||
+    value === "subscription"
   );
 }
 
@@ -178,6 +211,14 @@ export function configFromForm(
     };
   }
 
+  if (type === "discount") {
+    return {
+      title: field(formData, "title"),
+      description: field(formData, "description"),
+      discountCode: field(formData, "discountCode"),
+    };
+  }
+
   if (type === "loyalty") {
     return {
       title: field(formData, "title"),
@@ -189,9 +230,89 @@ export function configFromForm(
     };
   }
 
+  if (type === "subscription") {
+    return {
+      subscriptionHeading: field(formData, "subscriptionHeading"),
+      subscriptionBody: field(formData, "subscriptionBody"),
+      buttonText: field(formData, "buttonText"),
+      emailPlaceholder: field(formData, "emailPlaceholder"),
+      successMessage: field(formData, "successMessage"),
+    };
+  }
+
   return {
     upsellHeading: field(formData, "upsellHeading"),
     emptyMessage: field(formData, "emptyMessage"),
+  };
+}
+
+export function validateBlockForm(
+  type: ThankYouBlockType,
+  formData: FormData,
+) {
+  const errors: string[] = [];
+
+  if (type === "faq") {
+    const items = faqItemsFromForm(formData);
+
+    if (!items.length) {
+      errors.push("Add at least one FAQ question and answer.");
+    }
+
+    items.forEach((item, index) => {
+      const position = index + 1;
+
+      if (!item.question) {
+        errors.push(`FAQ ${position} question is required.`);
+      }
+
+      if (!item.answer) {
+        errors.push(`FAQ ${position} answer is required.`);
+      }
+    });
+  }
+
+  if (type === "image" || type === "video" || type === "media") {
+    const mediaType =
+      type === "video" || field(formData, "mediaType") === "video"
+        ? "video"
+        : "image";
+
+    if (mediaType === "image") {
+      requireImageSource(errors, formData, "imageUrl", "Image URL");
+      optionalUrl(errors, formData, "imageLink", "Image link");
+    } else {
+      requireUrl(errors, formData, "videoUrl", "Video URL");
+      requireImageSource(errors, formData, "videoThumbnail", "Thumbnail image URL");
+    }
+  }
+
+  if (type === "discount") {
+    requireText(errors, formData, "title", "Title");
+    requireText(errors, formData, "description", "Description");
+    requireText(errors, formData, "discountCode", "Discount code");
+  }
+
+  if (type === "loyalty") {
+    requireText(errors, formData, "title", "Title");
+    requireText(errors, formData, "description", "Description");
+    requireText(errors, formData, "pointsText", "Points badge");
+    requireText(errors, formData, "buttonText", "Button text");
+    requireUrl(errors, formData, "buttonUrl", "Button link");
+  }
+
+  if (type === "subscription") {
+    requireText(errors, formData, "subscriptionHeading", "Heading");
+    requireText(errors, formData, "subscriptionBody", "Description");
+    requireText(errors, formData, "buttonText", "Button text");
+    requireText(errors, formData, "emailPlaceholder", "Email placeholder");
+    requireText(errors, formData, "successMessage", "Success message");
+  }
+
+  return {
+    success: errors.length === 0,
+    errors,
+    message: errors[0] || "",
   };
 }
 
@@ -199,6 +320,89 @@ export function field(formData: FormData, name: string) {
   const value = formData.get(name);
 
   return typeof value === "string" ? value.trim() : "";
+}
+
+function requireText(
+  errors: string[],
+  formData: FormData,
+  name: string,
+  label: string,
+) {
+  if (!textContent(field(formData, name))) {
+    errors.push(`${label} is required.`);
+  }
+}
+
+function requireUrl(
+  errors: string[],
+  formData: FormData,
+  name: string,
+  label: string,
+) {
+  const value = field(formData, name);
+
+  if (!value) {
+    errors.push(`${label} is required.`);
+    return;
+  }
+
+  if (!isValidUrl(value)) {
+    errors.push(`${label} must be a valid URL.`);
+  }
+}
+
+function requireImageSource(
+  errors: string[],
+  formData: FormData,
+  name: string,
+  label: string,
+) {
+  const value = field(formData, name);
+
+  if (!value) {
+    errors.push(`${label} is required.`);
+    return;
+  }
+
+  if (!isValidUrl(value) && !isValidImageDataUrl(value)) {
+    errors.push(`${label} must be a valid URL or uploaded image.`);
+  }
+}
+
+function optionalUrl(
+  errors: string[],
+  formData: FormData,
+  name: string,
+  label: string,
+) {
+  const value = field(formData, name);
+
+  if (value && !isValidUrl(value)) {
+    errors.push(`${label} must be a valid URL.`);
+  }
+}
+
+function isValidUrl(value: string) {
+  try {
+    const url = new URL(value);
+
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function isValidImageDataUrl(value: string) {
+  return /^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+/]+=*$/i.test(
+    value,
+  );
+}
+
+function textContent(value: string) {
+  return value
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .trim();
 }
 
 function faqItemsFromForm(formData: FormData) {

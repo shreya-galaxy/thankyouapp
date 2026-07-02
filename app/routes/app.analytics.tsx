@@ -115,6 +115,7 @@ export default function AnalyticsPage() {
               <s-table-header>Type</s-table-header>
               {/* <s-table-header>Order</s-table-header>
               <s-table-header>Item</s-table-header> */}
+              <s-table-header>Details</s-table-header>
               <s-table-header>Link</s-table-header>
             </s-table-header-row>
 
@@ -137,6 +138,9 @@ export default function AnalyticsPage() {
                       click.ctaText ||
                       "-"}
                   </s-table-cell> */}
+                  <s-table-cell>
+                    {click.itemId || click.itemTitle || click.ctaText || "-"}
+                  </s-table-cell>
                   <s-table-cell>
                     {click.itemUrl || click.ctaLink ? (
                       <s-link

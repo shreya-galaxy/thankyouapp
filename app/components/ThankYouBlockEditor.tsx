@@ -1,14 +1,19 @@
 import type {ThankYouBlockConfig, ThankYouBlockType} from "../models/thankYouBlock";
 import {useAppBridge} from "@shopify/app-bridge-react";
-import {blockTemplates} from "../models/thankYouBlock";
+import {blockTemplates, validateBlockForm} from "../models/thankYouBlock";
 import {
   useState,
   useRef,
   useEffect,
   type CSSProperties,
+  type ChangeEvent,
   type FormEvent,
 } from "react";
 import {Form, useNavigate} from "react-router";
+import RichTextField from "./RichTextField";
+import {useEditor, EditorContent} from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Link from "@tiptap/extension-link";
 
 type Props = {
   blockId?: string;
@@ -22,6 +27,7 @@ type Props = {
 type SaveResult = {
   success?: boolean;
   message?: string;
+  errors?: string[];
   redirectTo?: string;
 };
 
@@ -180,8 +186,20 @@ export function ThankYouBlockEditor({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
-    setIsSaving(true);
+    const formData = new FormData(form);
+    const validation = validateBlockForm(type, formData);
+
+console.log("DESCRIPTION JSON", formData.get("description"));
+console.log("DESCRIPTION JSON", JSON.parse(String(formData.get("description"))));
+
     setSaveError("");
+
+    if (!validation.success) {
+      setSaveError(validation.errors.join(" "));
+      return;
+    }
+
+    setIsSaving(true);
 
     try {
       const token = await shopify.idToken();
@@ -191,7 +209,7 @@ export function ThankYouBlockEditor({
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: new FormData(form),
+        body: formData,
       });
       const result = (await response.json().catch(() => null)) as SaveResult | null;
 
@@ -202,7 +220,10 @@ export function ThankYouBlockEditor({
       }
 
       // if (!response.ok || !result?.success) {
-      //   throw new Error(result?.message || JSON.stringify(response) || "Could not save block1.");
+      //   setSaveError(
+      //     result?.errors?.join(" ") || result?.message || "Could not save block.",
+      //   );
+      //   return;
       // }
 
       navigate(result?.redirectTo || "/app/blocks");
@@ -259,6 +280,10 @@ export function ThankYouBlockEditor({
                   <FaqFields heading={config.heading} items={faqItems} />
                 ) : type === "image" || type === "video" || type === "media" ? (
                   <MediaFields config={config} type={type} />
+                ) : type === "discount" ? (
+                  <DiscountFields config={config} />
+                ) : type === "subscription" ? (
+                  <SubscriptionFields config={config} />
                 ) : type === "referral" ? (
                   <ReferralFields config={config} />
                 ) : type === "loyalty" ? (
@@ -453,6 +478,7 @@ function FaqFields({
           id="heading"
           maxLength={80}
           name="heading"
+          required
           style={fieldStyle}
         />
       </div>
@@ -505,6 +531,7 @@ function FaqFields({
             </label>
             <input
               id={`question_${index}`}
+              maxLength={80}
               value={item.question}
               onInput={(e) =>
                 updateFaq(
@@ -515,6 +542,7 @@ function FaqFields({
               }
               name={`question_${index}`}
               placeholder="Question"
+              required
               style={fieldStyle}
             />
 
@@ -533,6 +561,7 @@ function FaqFields({
               }
               name={`answer_${index}`}
               placeholder="Answer"
+              required
               rows={4}
               style={fieldStyle}
             />
@@ -569,8 +598,25 @@ function FaqFields({
   );
 }
 
-function defaultFaqItems(config: ThankYouBlockConfig) {
-  return Array.isArray(config.items) ? config.items : [];
+function defaultFaqItems(config: unknown) {
+  if (!config || typeof config !== "object" || !("items" in config)) {
+    return [];
+  }
+
+  const items = (config as {items?: unknown}).items;
+
+  return Array.isArray(items)
+    ? items.map((item) => ({
+        question:
+          item && typeof item === "object" && "question" in item
+            ? String(item.question)
+            : "",
+        answer:
+          item && typeof item === "object" && "answer" in item
+            ? String(item.answer)
+            : "",
+      }))
+    : [];
 }
 
 function MediaFields({
@@ -599,6 +645,7 @@ function MediaFields({
           maxLength={60}
           name="heading"
           style={fieldStyle}
+          required
         />
       </div>
 
@@ -633,31 +680,28 @@ function MediaFields({
             defaultValue={config.videoUrl || ""}
             name="videoUrl"
             placeholder="Video URL"
+            type="url"
             style={fieldStyle}
             required
           />
           <text>Enter a valid video URL (YouTube, Vimeo, MP4, or other supported video link). The video will open in a new browser tab when customers click the link.</text>
-          <input
-            aria-label="Thumbnail image URL"
-            defaultValue={config.videoThumbnail || ""}
+          <ImageSourceField
+            label="Thumbnail Image (URL or Upload)"
             name="videoThumbnail"
-            placeholder="Thumbnail image URL"
-            style={fieldStyle}
-            required
+            value={config.videoThumbnail || ""}
+            placeholder="Thumbnail Image (URL or Upload)"
           />
-          <text>Upload your image for free using Shopify&apos;s Files page, within the Content tab.</text>
         </>
       ) : (
         <>
-          <text>Upload your image for free using Shopify&apos;s Files page, within the Content tab.</text>
-          <input
-            aria-label="Image URL"
-            defaultValue={config.imageUrl || ""}
+        
+          <ImageSourceField
+            label="Image (URL or Upload)"
             name="imageUrl"
-            placeholder="Image URL"
-            style={fieldStyle}
+            value={config.imageUrl || ""}
+            placeholder="Image (URL or Upload)"
           />
-          <input
+           <input
             aria-label="Image alt text"
             defaultValue={config.imageAlt || ""}
             name="imageAlt"
@@ -669,10 +713,160 @@ function MediaFields({
             defaultValue={config.imageLink || ""}
             name="imageLink"
             placeholder="Image link (optional)"
+            type="url"
             style={fieldStyle}
           />
         </>
       )}
+    </s-stack>
+  );
+}
+
+function ImageSourceField({
+  label,
+  name,
+  value,
+  placeholder,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  placeholder: string;
+}) {
+  const [source, setSource] = useState(value);
+  const [error, setError] = useState("");
+
+  const handleUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    setError("");
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Choose an image file.");
+      return;
+    }
+
+    if (file.size > 48 * 1024) {
+      setError(
+        "Uploaded image must be smaller than 48 KB. Use a Shopify Files URL for larger images.",
+      );
+      event.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setSource(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div>
+      <label style={labelStyle} htmlFor={name}>
+        {label}
+      </label>
+      <text>Upload an image here or provide a publicly accessible image URL or upload an image to Shopify Files (Content → Files) and use its URL here.</text>
+         
+      <input
+        id={name}
+        name={name}
+        onChange={(event) => setSource(event.target.value)}
+        placeholder={placeholder}
+        required
+        style={fieldStyle}
+        type={source.startsWith("data:image/") ? "text" : "url"}
+        value={source}
+      />
+      <div style={{marginBlockStart: "8px"}}>
+        <input
+          accept="image/*"
+          aria-label={`Upload ${label.toLowerCase()}`}
+          onChange={handleUpload}
+          type="file"
+        />
+      </div>
+      {error && (
+        <s-text color="critical">
+          {error}
+        </s-text>
+      )}
+    </div>
+  );
+}
+
+function DiscountFields({config}: {config: ThankYouBlockConfig}) {
+  return (
+    <s-stack gap="base">
+      <TextField
+        label="Title"
+        name="title"
+        value={config.title || "Discount code"}
+        maxLength={80}
+        required
+      />
+      <TextAreaField
+        label="Description"
+        name="description"
+        value={config.description || "Use this code on your next purchase:"}
+        required
+      />
+      <TextField
+        label="Discount code"
+        name="discountCode"
+        value={config.discountCode || ""}
+        maxLength={40}
+        required
+      />
+    </s-stack>
+  );
+}
+
+function SubscriptionFields({config}: {config: ThankYouBlockConfig}) {
+  return (
+    <s-stack gap="base">
+      <TextField
+        label="Heading"
+        name="subscriptionHeading"
+        value={config.subscriptionHeading || "Never run out again"}
+        maxLength={80}
+        required
+      />
+      <TextAreaField
+        label="Description"
+        name="subscriptionBody"
+        value={
+          config.subscriptionBody ||
+          "Subscribe and get exclusive savings on every order."
+        }
+        required
+      />
+      <TextField
+        label="Email placeholder"
+        name="emailPlaceholder"
+        value={config.emailPlaceholder || "Email address"}
+        maxLength={60}
+        required
+      />
+      <TextField
+        label="Button text"
+        name="buttonText"
+        value={config.buttonText || "Subscribe"}
+        maxLength={24}
+        required
+      />
+      <TextField
+        label="Success message"
+        name="successMessage"
+        value={config.successMessage || "Thanks for subscribing."}
+        maxLength={100}
+        required
+      />
     </s-stack>
   );
 }
@@ -692,10 +886,12 @@ function ReferralFields({config}: {config: ThankYouBlockConfig}) {
         name="title"
         value={config.title || "Refer friends. Get rewards."}
         maxLength={80}
+        required
       />
-      <TextAreaField
+      <RichTextField
         label="Description"
         name="description"
+        required
         value={
           config.description ||
           "Give your friends {friend_reward} off all products. Get {advocate_reward} off all products when they purchase with your discount code {referral_code}."
@@ -710,6 +906,7 @@ function ReferralFields({config}: {config: ThankYouBlockConfig}) {
         name="shareLabel"
         value={config.shareLabel || "Share now:"}
         maxLength={40}
+        required
       />
       {/* <TextField
         label="Share button text"
@@ -722,18 +919,21 @@ function ReferralFields({config}: {config: ThankYouBlockConfig}) {
         name="friendReward"
         value={config.friendReward || "15%"}
         maxLength={30}
+        required
       />
       <TextField
         label="Advocate reward"
         name="advocateReward"
         value={config.advocateReward || "$10"}
         maxLength={30}
+        required
       />
       <TextField
         label="Referral code"
         name="referralCode"
         value={config.referralCode || "THANKYOU15"}
         maxLength={40}
+        required
       />
       {/* <TextField
         label="Referral link"
@@ -753,39 +953,44 @@ function LoyaltyFields({config}: {config: ThankYouBlockConfig}) {
         name="title"
         value={config.title || "Join our loyalty program"}
         maxLength={80}
+        required
       />
-      <TextAreaField
+      <RichTextField
         label="Description"
         name="description"
         value={
           config.description ||
           "Earn 2x points on future purchases and unlock member-only rewards."
         }
+        required
       />
       <TextField
         label="Points badge"
         name="pointsText"
         value={config.pointsText || "2x points"}
         maxLength={40}
+        required
       />
       <TextField
         label="Button text"
         name="buttonText"
         value={config.buttonText || "Join now"}
         maxLength={24}
+        required
       />
       <TextField
         label="Button link"
         name="buttonUrl"
         value={config.buttonUrl || ""}
         placeholder="https://example.com/account/register"
+        required
+        type="url"
       />
       <TextField
         label="Valid until"
         name="validUntil"
         value={config.validUntil || ""}
-        placeholder="Valid till Nov 31, 2026"
-        maxLength={60}
+        type="date"
       />
     </s-stack>
   );
@@ -797,12 +1002,16 @@ function TextField({
   value,
   maxLength,
   placeholder,
+  required,
+  type = "text",
 }: {
   label: string;
   name: string;
   value: string;
   maxLength?: number;
   placeholder?: string;
+  required?: boolean;
+  type?: string;
 }) {
   return (
     <div>
@@ -815,20 +1024,133 @@ function TextField({
         maxLength={maxLength}
         name={name}
         placeholder={placeholder}
+        required={required}
         style={fieldStyle}
+        type={type}
       />
     </div>
   );
 }
 
+const richTextToolbarStyle: CSSProperties = {
+  display: "flex",
+  gap: "8px",
+  marginBlockEnd: "8px",
+};
+
+const richTextButtonStyle: CSSProperties = {
+  border: "1px solid #c9cccf",
+  borderRadius: "6px",
+  background: "#fff",
+  cursor: "pointer",
+  font: "inherit",
+  padding: "6px 10px",
+};
+
+// function RichTextField({
+//   label,
+//   name,
+//   value,
+//   required,
+// }: {
+//   label: string;
+//   name: string;
+//   value: string;
+//   required?: boolean;
+// }) {
+//   const editorRef = useRef<HTMLDivElement>(null);
+//   const [html, setHtml] = useState(value);
+
+//   const syncValue = () => {
+//     const nextHtml = editorRef.current?.innerHTML || "";
+//     const normalized = nextHtml === "<br>" ? "" : nextHtml;
+
+//     setHtml(normalized);
+//   };
+
+//   const runCommand = (command: string, commandValue?: string) => {
+//     editorRef.current?.focus();
+//     document.execCommand(command, false, commandValue);
+//     syncValue();
+//   };
+
+//   const addLink = () => {
+//     const url = window.prompt("Enter link URL");
+
+//     if (!url) return;
+
+//     try {
+//       const parsed = new URL(url);
+
+//       if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+//         runCommand("createLink", parsed.toString());
+//       }
+//     } catch {
+//       return;
+//     }
+//   };
+
+//   return (
+//     <div>
+//       <label style={labelStyle} htmlFor={`${name}_editor`}>
+//         {label}
+//       </label>
+//       <div style={richTextToolbarStyle}>
+//         <button
+//           onClick={() => runCommand("bold")}
+//           style={richTextButtonStyle}
+//           type="button"
+//         >
+//           B
+//         </button>
+//         <button
+//           onClick={() => runCommand("italic")}
+//           style={richTextButtonStyle}
+//           type="button"
+//         >
+//           I
+//         </button>
+//         <button
+//           onClick={() => runCommand("insertUnorderedList")}
+//           style={richTextButtonStyle}
+//           type="button"
+//         >
+//           List
+//         </button>
+//         <button
+//           onClick={addLink}
+//           style={richTextButtonStyle}
+//           type="button"
+//         >
+//           Link
+//         </button>
+//       </div>
+//       <div
+//         contentEditable
+//         dangerouslySetInnerHTML={{__html: value}}
+//         id={`${name}_editor`}
+//         onBlur={syncValue}
+//         onInput={syncValue}
+//         ref={editorRef}
+//         role="textbox"
+//         style={{...fieldStyle, minHeight: "120px"}}
+//         suppressContentEditableWarning
+//       />
+//       <input name={name} required={required} type="hidden" value={html} />
+//     </div>
+//   );
+// }
+
 function TextAreaField({
   label,
   name,
   value,
+  required,
 }: {
   label: string;
   name: string;
   value: string;
+  required?: boolean;
 }) {
   return (
     <div>
@@ -839,6 +1161,7 @@ function TextAreaField({
         defaultValue={value}
         id={name}
         name={name}
+        required={required}
         rows={5}
         style={fieldStyle}
       />
@@ -931,6 +1254,7 @@ function UpsellFields({config}: {config: ThankYouBlockConfig}) {
           width={70}
           name="upsellHeading"
           style={fieldStyle}
+          required
         />
       </div>
       <div>
@@ -943,6 +1267,7 @@ function UpsellFields({config}: {config: ThankYouBlockConfig}) {
           maxLength={80}
           name="emptyMessage"
           style={fieldStyle}
+          required
         />
       </div>
       <s-box padding="base" borderWidth="base" borderRadius="base">

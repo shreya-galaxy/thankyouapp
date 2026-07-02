@@ -16,13 +16,4 @@ target = "purchase.checkout.block.render"
 api_access = true
 network_access = true
 
-[settings]
 
-[[settings.fields]]
-key = "discount_code"
-type = "single_line_text_field"
-name = "Discount code"
-description = "Enter discount code to show on Thank You page"
-[[settings.fields.validations]]
-name = "max"
-value = "32"

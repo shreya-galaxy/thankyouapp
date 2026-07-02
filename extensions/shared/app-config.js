@@ -40,7 +40,7 @@ const BUILD_APP_URL =
   '';
 
 const FALLBACK_APP_URLS = [
-  'https://eternal-reactions-prev-round.trycloudflare.com',
+  'https://derek-mixer-lens-injection.trycloudflare.com',
   'https://thankyouapp-production.up.railway.app',
 ];
 
