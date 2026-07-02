@@ -188,7 +188,7 @@ function TemplatePreview({ type }: { type: string }) {
     referral: "/referral-preview.png",
     loyalty: "/loyalty-preview.png",
     discount: "/referral-preview.png",
-    subscription: "/loyalty-preview.png",
+    subscription: "/subscription-preview.png",
     upsell: "/upsell-preview.png",
   };
 

@@ -189,10 +189,10 @@ export function ThankYouBlockEditor({
     const formData = new FormData(form);
     const validation = validateBlockForm(type, formData);
 
-console.log("DESCRIPTION JSON", formData.get("description"));
-console.log("DESCRIPTION JSON", JSON.parse(String(formData.get("description"))));
-
     setSaveError("");
+    for (const [key, value] of formData.entries()) {
+        console.log("ssssss", key, value);
+      }
 
     if (!validation.success) {
       setSaveError(validation.errors.join(" "));
@@ -748,9 +748,9 @@ function ImageSourceField({
       return;
     }
 
-    if (file.size > 48 * 1024) {
+    if (file.size > 1000 * 1024) {
       setError(
-        "Uploaded image must be smaller than 48 KB. Use a Shopify Files URL for larger images.",
+        "Uploaded image must be smaller than 1000 KB. Use a Shopify Files URL for larger images.",
       );
       event.target.value = "";
       return;
