@@ -20,6 +20,8 @@ import {PageLayout} from './components/PageLayout';
 
 export type RootLoader = typeof loader;
 
+const DEFAULT_APP_URL = 'https://thankyouapp-production-a309.up.railway.app';
+
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
  */
@@ -80,7 +82,7 @@ export async function loader(args: Route.LoaderArgs) {
     ...criticalData,
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
     publicAppUrl:
-      env.PUBLIC_APP_URL || env.PUBLIC_APP_PREVIEW_URL || env.LOCAL_APP_URL || '',
+      env.PUBLIC_APP_URL || DEFAULT_APP_URL || env.PUBLIC_APP_PREVIEW_URL || env.LOCAL_APP_URL,
     shop: getShopAnalytics({
       storefront,
       publicStorefrontId: env.PUBLIC_STOREFRONT_ID,

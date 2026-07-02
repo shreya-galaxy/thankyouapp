@@ -3,8 +3,10 @@
 // Instrumentation: when a fetch fails or no block is found, the placeholder
 // will show a short error message so it's visible without opening DevTools.
 (function(){
+  const DEFAULT_APP_URL = 'https://thankyouapp-production-a309.up.railway.app';
+
   async function fetchBlock(shop, type){
-    const appUrl = window.THANKYOU_APP_URL || window.PUBLIC_APP_URL || '';
+    const appUrl = window.THANKYOU_APP_URL || window.PUBLIC_APP_URL || DEFAULT_APP_URL;
     const candidates = [];
 
     if (!appUrl) {

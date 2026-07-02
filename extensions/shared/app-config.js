@@ -40,6 +40,7 @@ const BUILD_APP_URL =
   '';
 
 const FALLBACK_APP_URLS = [
+  'https://ethical-bigger-sec-null.trycloudflare.com',
   'https://thankyouapp-production-a309.up.railway.app',
 ];
 

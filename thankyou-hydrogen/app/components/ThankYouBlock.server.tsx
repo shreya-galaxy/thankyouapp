@@ -15,6 +15,8 @@ type BlocksApiResponse = {
   };
 };
 
+const DEFAULT_APP_URL = 'https://thankyouapp-production-a309.up.railway.app';
+
 async function tryFetchJson(urls: string[]) {
   let lastError: unknown = null;
   for (const u of urls) {
@@ -44,31 +46,18 @@ export default async function ThankYouBlock({type, shop}: Props) {
   const candidates: string[] = [];
 
   // Primary public app URL (production or configured)
-  if (process.env.PUBLIC_APP_URL) {
-    const u = new URL('/api/blocks', process.env.PUBLIC_APP_URL);
+  for (const appUrl of [
+    process.env.PUBLIC_APP_URL,
+    DEFAULT_APP_URL,
+    process.env.PUBLIC_APP_PREVIEW_URL,
+    process.env.LOCAL_APP_URL,
+  ]) {
+    if (!appUrl) continue;
+    const u = new URL('/api/blocks', appUrl);
     u.searchParams.set('shop', shopDomain);
     u.searchParams.set('type', type);
     candidates.push(u.toString());
   }
-
-  // If dev preview URL is provided (set by `shopify app dev`), try it too
-  if (process.env.PUBLIC_APP_PREVIEW_URL) {
-    const u = new URL('/api/blocks', process.env.PUBLIC_APP_PREVIEW_URL);
-    u.searchParams.set('shop', shopDomain);
-    u.searchParams.set('type', type);
-    candidates.push(u.toString());
-  }
-
-  // Local app server (React Router dev port)
-  if (process.env.LOCAL_APP_URL) {
-    const u = new URL('/api/blocks', process.env.LOCAL_APP_URL);
-    u.searchParams.set('shop', shopDomain);
-    u.searchParams.set('type', type);
-    candidates.push(u.toString());
-  }
-
-  // Fallback: try localhost:33107 (default React Router dev URL)
-  candidates.push(`http://localhost:33107/api/blocks?shop=${encodeURIComponent(shopDomain)}&type=${encodeURIComponent(type)}`);
 
   try {
     const data = (await tryFetchJson(candidates)) as BlocksApiResponse | null;

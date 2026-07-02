@@ -7,6 +7,8 @@ import {
 } from '@shopify/hydrogen';
 import type {EntryContext} from 'react-router';
 
+const DEFAULT_APP_URL = 'https://thankyouapp-production-a309.up.railway.app';
+
 export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
@@ -16,7 +18,7 @@ export default async function handleRequest(
 ) {
   const env = context.env as unknown as Record<string, string | undefined>;
   const appOrigin = getOrigin(
-    env.PUBLIC_APP_URL || env.PUBLIC_APP_PREVIEW_URL || env.LOCAL_APP_URL,
+    env.PUBLIC_APP_URL || DEFAULT_APP_URL || env.PUBLIC_APP_PREVIEW_URL || env.LOCAL_APP_URL,
   );
   const {nonce, header, NonceProvider} = createContentSecurityPolicy({
     shop: {
@@ -29,7 +31,7 @@ export default async function handleRequest(
       'https://*.myshopify.com',
       'https://*.shopify.com',
       'https://*.trycloudflare.com',
-      'https://thankyouapp-production-a309.up.railway.app/',
+      DEFAULT_APP_URL,
       ...(appOrigin ? [appOrigin] : []),
     ],
   });
