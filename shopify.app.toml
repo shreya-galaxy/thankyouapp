@@ -24,7 +24,10 @@ api_version = "2026-07"
 scopes = "read_customers,read_orders,read_products,write_discounts,write_metaobject_definitions,write_metaobjects,write_products"
 
 [auth]
-redirect_urls = [ "https://thankyouapp-production-a309.up.railway.app/api/auth" ]
+redirect_urls = [
+  "https://thankyouapp-production-a309.up.railway.app/auth/callback",
+  "https://thankyouapp-production-a309.up.railway.app/auth/shopify/callback"
+]
 
 [product.metafields.app.demo_info]
 type = "single_line_text_field"
@@ -49,6 +52,5 @@ required = true
 [metaobjects.app.example.fields.description]
 name = "Description"
 type = "multi_line_text_field"
-
 
 

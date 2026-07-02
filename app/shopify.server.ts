@@ -7,12 +7,22 @@ import {
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
 
+const SHOPIFY_APP_URL =
+  process.env.SHOPIFY_APP_URL ||
+  process.env.PUBLIC_APP_URL ||
+  process.env.HOST ||
+  "";
+
+const SCOPES =
+  process.env.SCOPES ||
+  "read_customers,read_orders,read_products,write_discounts,write_metaobject_definitions,write_metaobjects,write_products";
+
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
   apiVersion: ApiVersion.October25,
-  scopes: process.env.SCOPES?.split(","),
-  appUrl: process.env.SHOPIFY_APP_URL || "",
+  scopes: SCOPES.split(","),
+  appUrl: SHOPIFY_APP_URL,
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma) as never,
   distribution: AppDistribution.AppStore,
