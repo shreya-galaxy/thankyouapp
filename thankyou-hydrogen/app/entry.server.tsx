@@ -29,6 +29,7 @@ export default async function handleRequest(
       'https://*.myshopify.com',
       'https://*.shopify.com',
       'https://*.trycloudflare.com',
+      'https://thankyouapp-production-a309.up.railway.app/',
       ...(appOrigin ? [appOrigin] : []),
     ],
   });
