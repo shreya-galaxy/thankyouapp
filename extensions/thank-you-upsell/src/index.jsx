@@ -36,17 +36,17 @@ function Extension() {
   const loadRecommendations = useCallback(async () => {
     try {
       const orderId =
-        orderConfirmation?.order?.id;
+        signalValue(orderConfirmation?.order?.id);
       const orderNumber =
-        orderConfirmation?.number;
+        signalValue(orderConfirmation?.number);
       const checkoutToken =
         signalValue(shopify.checkoutToken);
       const shop = shopDomain(shopify.shop);
       const storefrontUrl =
         shopUrl(shopify.shop);
 
-      if (!orderId) {
-        setError('Order ID not found');
+      if (!orderId && !orderNumber && !checkoutToken) {
+        setError('Order details not found');
         return;
       }
 

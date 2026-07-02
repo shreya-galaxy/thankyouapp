@@ -27,23 +27,25 @@ export async function action({request}) {
       });
     }
 
-    if (!orderId) {
+    if (!orderId && !checkoutToken && !orderNumber) {
       return responseJson({
         success: false,
-        message: 'Order ID is required',
+        message: 'Order ID, order number, or checkout token is required',
       });
     }
 
     const adminOrderId =
-      normalizeOrderId(orderId);
+      orderId ? normalizeOrderId(orderId) : '';
 
     const {admin} =
       await unauthenticated.admin(shop);
 
-    const orderData = await fetchOrderById(
-      admin,
-      adminOrderId,
-    );
+    const orderData = adminOrderId
+      ? await fetchOrderById(
+          admin,
+          adminOrderId,
+        )
+      : null;
 
     let order =
       orderData?.data?.order;
@@ -283,7 +285,15 @@ async function fetchOrderByQuery(admin, query) {
 }
 
 function normalizeOrderId(orderId) {
-  return orderId.replace(
+  const value = String(orderId || '').trim();
+
+  if (!value) return '';
+
+  if (/^\d+$/.test(value)) {
+    return `gid://shopify/Order/${value}`;
+  }
+
+  return value.replace(
     'gid://shopify/OrderIdentity/',
     'gid://shopify/Order/',
   );
@@ -312,6 +322,9 @@ function responseJson(data) {
 
         'Access-Control-Allow-Methods':
           'POST, OPTIONS',
+
+        'Access-Control-Allow-Headers':
+          'Content-Type',
       },
     },
   );
