@@ -219,12 +219,12 @@ export function ThankYouBlockEditor({
         return;
       }
 
-      // if (!response.ok || !result?.success) {
-      //   setSaveError(
-      //     result?.errors?.join(" ") || result?.message || "Could not save block.",
-      //   );
-      //   return;
-      // }
+      if (!response.ok || !result?.success) {
+        setSaveError(
+          result?.errors?.join(" ") || result?.message || "Could not save block.",
+        );
+        return;
+      }
 
       navigate(result?.redirectTo || "/app/blocks");
     } catch (error) {
