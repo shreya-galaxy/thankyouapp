@@ -189,10 +189,10 @@ export function ThankYouBlockEditor({
     const formData = new FormData(form);
     const validation = validateBlockForm(type, formData);
 
-console.log("DESCRIPTION JSON", formData.get("description"));
-console.log("DESCRIPTION JSON", JSON.parse(String(formData.get("description"))));
-
     setSaveError("");
+    for (const [key, value] of formData.entries()) {
+        console.log("ssssss", key, value);
+      }
 
     if (!validation.success) {
       setSaveError(validation.errors.join(" "));
