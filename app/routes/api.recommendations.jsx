@@ -11,7 +11,6 @@ export async function action({request}) {
     if (request.method === 'OPTIONS') {
       return responseJson({});
     }
-
     const body = await request.json();
     const {orderId, orderNumber, checkoutToken} = body;
     const shop =
