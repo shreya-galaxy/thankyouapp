@@ -57,7 +57,7 @@ export async function loader() {
 async function createOrSubscribeCustomer(admin, email) {
   let createData = await createCustomer(admin, {
     email,
-    emailMarketingConsent: EMAIL_MARKETING_CONSENT,
+    emailMarketingConsent: subscribedEmailMarketingConsent(),
   });
 
   if (createData?.errors?.length) {
@@ -156,7 +156,7 @@ async function subscribeExistingCustomer(admin, customerId) {
     {
       input: {
         customerId,
-        emailMarketingConsent: EMAIL_MARKETING_CONSENT,
+        emailMarketingConsent: subscribedEmailMarketingConsent(),
       },
     },
   );
@@ -193,7 +193,7 @@ async function subscribeExistingCustomerWithUpdate(admin, customerId) {
     {
       input: {
         id: customerId,
-        emailMarketingConsent: EMAIL_MARKETING_CONSENT,
+        emailMarketingConsent: subscribedEmailMarketingConsent(),
       },
     },
   );
@@ -207,6 +207,13 @@ async function subscribeExistingCustomerWithUpdate(admin, customerId) {
   if (errors.length) {
     throw new Error(errors.map((error) => error.message).join(' '));
   }
+}
+
+function subscribedEmailMarketingConsent() {
+  return {
+    ...EMAIL_MARKETING_CONSENT,
+    consentUpdatedAt: new Date().toISOString(),
+  };
 }
 
 async function recordSubscriptionSignup(shop, email, body, customerId) {
