@@ -6,7 +6,7 @@
 api_version = "2026-01"
 
 [[extensions]]
-name = "Thank You - Subscription Section"
+name = "Thank You - Email Subscription Section"
 handle = "thank-you-subscription"
 type = "ui_extension"
 uid = "6555e101-ff70-015a-49d4-29036d995a505c0f7a39"
