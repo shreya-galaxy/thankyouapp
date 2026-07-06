@@ -4,6 +4,7 @@ import {authenticate} from "../shopify.server";
 import {boundary} from "@shopify/shopify-app-react-router/server";
 import prisma from "../db.server";
 import { createMetafieldDefinitions } from "../utils/metafields.server";
+import {checkoutEditorUrl} from "../utils/checkoutEditor.server";
 
 export const loader = async ({request}: LoaderFunctionArgs) => {
   // const {session} = await authenticate.admin(request);
@@ -50,7 +51,7 @@ export const loader = async ({request}: LoaderFunctionArgs) => {
   ).sort((a, b) => b[1] - a[1])[0];
 
   return {
-    checkoutCustomizeUrl: checkoutEditorUrl(shop),
+    checkoutCustomizeUrl: await checkoutEditorUrl(shop, admin),
     totalClicks,
     todayClicks,
     recentCount: recentEventTypes.length,
@@ -233,16 +234,6 @@ export default function Index() {
       </s-section> */}
     </s-page>
   );
-}
-
-function checkoutEditorUrl(shop: string) {
-  const storeHandle = shop
-    .replace(/^https?:\/\//, "")
-    .replace(/\/.*$/, "")
-    .replace(/\.myshopify\.com$/i, "")
-    .split(".")[0];
-
-  return `https://admin.shopify.com/store/${storeHandle}/settings/checkout`;
 }
 
 function formatDate(value: string) {

@@ -2,6 +2,7 @@ import {useLoaderData, type ActionFunctionArgs, type LoaderFunctionArgs} from "r
 import prisma from "../db.server";
 import { authenticate } from "../shopify.server";
 import {useAppBridge} from "@shopify/app-bridge-react";
+import {checkoutEditorUrl} from "../utils/checkoutEditor.server";
 import {
   blockTemplates,
   isBlockType,
@@ -9,13 +10,14 @@ import {
 } from "../models/thankYouBlock";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const blocks = await prisma.thankYouBlock.findMany({
     where: { shop: session.shop },
     orderBy: { updatedAt: "desc" },
   });
 
   return {
+    checkoutCustomizeUrl: await checkoutEditorUrl(session.shop, admin),
     templates: Object.values(blockTemplates).filter(
       (template) => !("deprecated" in template && template.deprecated),
     ),
@@ -55,7 +57,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function BlocksPage() {
-  const { templates, blocks } = useLoaderData<typeof loader>();
+  const { checkoutCustomizeUrl, templates, blocks } =
+    useLoaderData<typeof loader>();
   const shopify = useAppBridge();
   const existingTypes = new Set(blocks.map((block) => block.type));
 
@@ -89,6 +92,14 @@ export default function BlocksPage() {
 
   return (
     <s-page heading="Checkout Blocks">
+      <s-button
+        slot="primary-action"
+        href={checkoutCustomizeUrl}
+        target="_blank"
+      >
+        Edit thank-you page
+      </s-button>
+
       <s-section heading="Select a template">
         <s-grid
           gap="base"
