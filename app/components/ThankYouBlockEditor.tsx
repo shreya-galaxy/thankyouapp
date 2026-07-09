@@ -642,7 +642,6 @@ function MediaFields({
           maxLength={60}
           name="heading"
           style={fieldStyle}
-          required
         />
       </div>
 
@@ -789,9 +788,9 @@ function ImageSourceField({
         />
       </div>
       {error && (
-        <s-text color="critical">
+        <s-banner tone="critical">
           {error}
-        </s-text>
+        </s-banner>
       )}
     </div>
   );

@@ -4,9 +4,7 @@ import {authenticate} from "../shopify.server";
 import {boundary} from "@shopify/shopify-app-react-router/server";
 import prisma from "../db.server";
 import { createMetafieldDefinitions } from "../utils/metafields.server";
-
-const checkoutCustomizeUrl =
-  "https://admin.shopify.com/store/gwl-apps-demo/settings/checkout";
+import {checkoutEditorUrl} from "../utils/checkoutEditor.server";
 
 export const loader = async ({request}: LoaderFunctionArgs) => {
   // const {session} = await authenticate.admin(request);
@@ -53,6 +51,7 @@ export const loader = async ({request}: LoaderFunctionArgs) => {
   ).sort((a, b) => b[1] - a[1])[0];
 
   return {
+    checkoutCustomizeUrl: await checkoutEditorUrl(shop, admin),
     totalClicks,
     todayClicks,
     recentCount: recentEventTypes.length,
@@ -74,6 +73,7 @@ export const loader = async ({request}: LoaderFunctionArgs) => {
 
 export default function Index() {
   const {
+    checkoutCustomizeUrl,
     totalClicks,
     todayClicks,
     recentCount,
@@ -175,8 +175,8 @@ export default function Index() {
             >
               Manage app blocks
             </s-button>
-            <s-button href={checkoutCustomizeUrl} target="_blank" rel="noopener noreferrer">
-              Open checkout editor
+            <s-button href={checkoutCustomizeUrl} target="_blank">
+              Open editor
             </s-button>
           </s-stack>
         </s-stack>

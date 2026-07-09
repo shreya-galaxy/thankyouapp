@@ -1,7 +1,8 @@
+/* global globalThis */
 import '@shopify/ui-extensions/preact';
 import {render} from 'preact';
 import {useEffect, useState} from 'preact/hooks';
-import {trackThankYouClick} from '../../shared/analytics';
+import {submitSubscriptionSignup} from '../../shared/subscription';
 import {limitText, trimText} from '../../shared/text';
 import {fetchActiveBlock} from '../../shared/blocks';
 import {claimExtensionRender} from '../../shared/render-once';
@@ -23,6 +24,7 @@ function Extension() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [tone, setTone] = useState('subdued');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchActiveBlock('subscription')
@@ -71,7 +73,7 @@ function Extension() {
     100,
   );
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const normalizedEmail = trimText(email).toLowerCase();
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
@@ -80,7 +82,12 @@ function Extension() {
       return;
     }
 
-    trackThankYouClick('subscription_signup', {
+    setSubmitting(true);
+    setTone('subdued');
+    setMessage('');
+
+    const payload = thankYouPayload('subscription_signup', {
+      email: normalizedEmail,
       ctaText: cta,
       itemId: normalizedEmail,
       itemTitle: heading,
@@ -88,9 +95,20 @@ function Extension() {
       payloadEmail: normalizedEmail,
     });
 
-    setTone('success');
-    setMessage(successMessage);
-    setEmail('');
+    try {
+      await submitSubscriptionSignup(payload);
+
+      setTone('success');
+      setMessage(successMessage);
+      setEmail('');
+    } catch (error) {
+      setTone('critical');
+      setMessage(
+        error?.message || 'Could not subscribe this email address.',
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -108,10 +126,57 @@ function Extension() {
           onInput={(event) => setEmail(event.target.value)}
         />
 
-        <s-button onClick={handleSubmit}>{cta}</s-button>
+        <s-button disabled={submitting} onClick={handleSubmit}>
+          {submitting ? 'Subscribing...' : cta}
+        </s-button>
 
         {message && <s-text color={tone}>{message}</s-text>}
       </s-stack>
     </s-box>
   );
+}
+
+function thankYouPayload(eventType, details = {}) {
+  const extensionApi =
+    typeof globalThis !== 'undefined' ? globalThis.shopify : shopify;
+  const orderConfirmation = extensionApi.orderConfirmation.current;
+
+  return {
+    eventType,
+    shop: shopDomain(extensionApi.shop),
+    orderId: signalValue(orderConfirmation?.order?.id),
+    orderNumber: signalValue(orderConfirmation?.number),
+    source: `thank_you_${eventType}`,
+    ...details,
+  };
+}
+
+function shopDomain(shop) {
+  return firstNormalized([
+    shop?.myshopifyDomain,
+    shop?.domain,
+    shop?.storefrontUrl,
+    shop?.storefrontUrl?.current,
+  ]);
+}
+
+function signalValue(value) {
+  return value?.current || value;
+}
+
+function firstNormalized(values) {
+  const value = values.map(signalValue).find(Boolean);
+
+  if (!value) return '';
+
+  const text = String(value).trim();
+
+  try {
+    return new URL(text).hostname.toLowerCase();
+  } catch (error) {
+    return text
+      .replace(/^https?:\/\//, '')
+      .replace(/\/.*$/, '')
+      .toLowerCase();
+  }
 }
