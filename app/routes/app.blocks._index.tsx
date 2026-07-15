@@ -201,6 +201,7 @@ function TemplatePreview({ type }: { type: string }) {
     discount: "/discount-preview.png",
     subscription: "/subscription-preview.png",
     upsell: "/upsell-preview.png",
+    checkoutUpsell: "/checkout-upsell-preview.png",
   };
 
   return (

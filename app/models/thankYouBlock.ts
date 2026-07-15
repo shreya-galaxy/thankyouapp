@@ -4,10 +4,38 @@ export type ThankYouBlockType =
   | "video"
   | "media"
   | "upsell"
+  | "checkoutUpsell"
   | "referral"
   | "loyalty"
   | "discount"
   | "subscription";
+
+export type CheckoutUpsellProduct = {
+  id: string;
+  title: string;
+  handle?: string;
+  image?: string;
+  tags?: string[];
+  collections?: ProductConditionValue[];
+  variants: Array<{
+    id: string;
+    title: string;
+    price?: string;
+  }>;
+};
+
+export type ProductConditionType = "tags" | "collections";
+export type ProductConditionRule = "include" | "exclude";
+export type ProductConditionValue = {
+  id?: string;
+  label: string;
+  handle?: string;
+};
+export type ProductCondition = {
+  type: ProductConditionType;
+  rule: ProductConditionRule;
+  values: ProductConditionValue[];
+};
 
 export type ThankYouBlockConfig = {
   heading?: string;
@@ -20,6 +48,9 @@ export type ThankYouBlockConfig = {
   videoThumbnail?: string;
   upsellHeading?: string;
   emptyMessage?: string;
+  productConditions?: ProductCondition[];
+  checkoutUpsellHeading?: string;
+  checkoutUpsellProducts?: CheckoutUpsellProduct[];
   title?: string;
   description?: string;
   buttonText?: string;
@@ -83,10 +114,20 @@ export const blockTemplates = {
   },
   upsell: {
     type: "upsell",
-    title: "Upsell Products",
+    title: "Thank You Page Upsell",
     description: "Recommend products from purchased product metafields.",
-    defaultName: "Upsell Products",
+    defaultName: "Thank You Page Upsell",
     defaultConfig: {},
+  },
+  checkoutUpsell: {
+    type: "checkoutUpsell",
+    title: "Checkout Upsell",
+    description: "Show selected products on checkout with an add-to-cart button.",
+    defaultName: "Checkout Upsell",
+    defaultConfig: {
+      checkoutUpsellHeading: "You might also like these",
+      checkoutUpsellProducts: [],
+    },
   },
   discount: {
     type: "discount",
@@ -153,6 +194,7 @@ export function isBlockType(value: unknown): value is ThankYouBlockType {
     value === "video" ||
     value === "media" ||
     value === "upsell" ||
+    value === "checkoutUpsell" ||
     value === "referral" ||
     value === "loyalty" ||
     value === "discount" ||
@@ -240,9 +282,18 @@ export function configFromForm(
     };
   }
 
+  if (type === "checkoutUpsell") {
+    return {
+      checkoutUpsellHeading: field(formData, "checkoutUpsellHeading"),
+      checkoutUpsellProducts: checkoutUpsellProductsFromForm(formData),
+      productConditions: productConditionsFromForm(formData),
+    };
+  }
+
   return {
     upsellHeading: field(formData, "upsellHeading"),
     emptyMessage: field(formData, "emptyMessage"),
+    productConditions: productConditionsFromForm(formData),
   };
 }
 
@@ -307,6 +358,22 @@ export function validateBlockForm(
     requireText(errors, formData, "buttonText", "Button text");
     requireText(errors, formData, "emailPlaceholder", "Email placeholder");
     requireText(errors, formData, "successMessage", "Success message");
+  }
+
+  if (type === "checkoutUpsell") {
+    requireText(errors, formData, "checkoutUpsellHeading", "Section header");
+
+    if (!checkoutUpsellProductsFromForm(formData).length) {
+      errors.push("Select at least one checkout upsell product.");
+    }
+  }
+
+  if (type === "upsell" || type === "checkoutUpsell") {
+    productConditionsFromForm(formData).forEach((condition, index) => {
+      if (!condition.values.length) {
+        errors.push(`Condition ${index + 1} needs at least one value.`);
+      }
+    });
   }
 
   return {
@@ -452,4 +519,137 @@ function faqItemsFromForm(formData: FormData) {
     console.error("Failed to parse FAQ data:", error);
     return [];
   }
+}
+
+function checkoutUpsellProductsFromForm(formData: FormData) {
+  const value = field(formData, "checkoutUpsellProducts");
+
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((item: unknown) => {
+        const product =
+          item && typeof item === "object"
+            ? (item as CheckoutUpsellProduct)
+            : null;
+
+        if (!product?.id || !product?.title) return null;
+
+        const variants = Array.isArray(product.variants)
+          ? product.variants
+              .map((variant) => ({
+                id: typeof variant.id === "string" ? variant.id : "",
+                title:
+                  typeof variant.title === "string" ? variant.title : "Default",
+                price:
+                  typeof variant.price === "string" ? variant.price : "",
+              }))
+              .filter((variant) => variant.id)
+          : [];
+
+        if (!variants.length) return null;
+
+        return {
+          id: String(product.id),
+          title: String(product.title).trim(),
+          handle:
+            typeof product.handle === "string" ? product.handle.trim() : "",
+          image:
+            typeof product.image === "string" ? product.image.trim() : "",
+          tags: stringArray(product.tags),
+          collections: productConditionValues(product.collections),
+          variants,
+        };
+      })
+      .filter(Boolean) as CheckoutUpsellProduct[];
+  } catch (error) {
+    console.error("Failed to parse checkout upsell products:", error);
+    return [];
+  }
+}
+
+function productConditionsFromForm(formData: FormData): ProductCondition[] {
+  const value = field(formData, "productConditions");
+
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((item: unknown) => {
+        const condition =
+          item && typeof item === "object"
+            ? (item as {
+                type?: unknown;
+                rule?: unknown;
+                values?: unknown;
+              })
+            : {};
+        const type =
+          condition.type === "collections" ? "collections" : "tags";
+        const rule =
+          condition.rule === "exclude" ? "exclude" : "include";
+        const values = productConditionValues(condition.values);
+
+        if (!values.length) return null;
+
+        return {
+          type,
+          rule,
+          values,
+        };
+      })
+      .filter(Boolean) as ProductCondition[];
+  } catch (error) {
+    console.error("Failed to parse product conditions:", error);
+    return [];
+  }
+}
+
+function productConditionValues(value: unknown): ProductConditionValue[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (typeof item === "string") {
+        const label = item.trim();
+
+        return label ? {label} : null;
+      }
+
+      const record =
+        item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+      const label =
+        stringField(record.label) ||
+        stringField(record.title) ||
+        stringField(record.handle) ||
+        stringField(record.id);
+
+      if (!label) return null;
+
+      return {
+        id: stringField(record.id),
+        label,
+        handle: stringField(record.handle),
+      };
+    })
+    .filter(Boolean) as ProductConditionValue[];
+}
+
+function stringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
+function stringField(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
 }
