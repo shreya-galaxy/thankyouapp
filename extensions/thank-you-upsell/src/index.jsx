@@ -32,6 +32,7 @@ function Extension() {
   const [error, setError] = useState('');
   const [blockConfig, setBlockConfig] = useState(null);
   const [blockEnabled, setBlockEnabled] = useState(false);
+  const [hiddenByConditions, setHiddenByConditions] = useState(false);
 
   const loadRecommendations = useCallback(async () => {
     try {
@@ -61,7 +62,14 @@ function Extension() {
         checkoutToken,
         shop,
         storefrontUrl,
+        productConditions: blockConfig?.productConditions || [],
       });
+
+      if (data.eligible === false) {
+        setHiddenByConditions(true);
+        setRecommendedProducts([]);
+        return;
+      }
 
       setRecommendedProducts(data.products || []);
     } catch (e) {
@@ -76,7 +84,7 @@ function Extension() {
   } finally {
     setLoading(false);
   }
-  }, [orderConfirmation]);
+  }, [blockConfig, orderConfirmation]);
 
   useEffect(() => {
     fetchActiveBlock('upsell')
@@ -86,16 +94,21 @@ function Extension() {
           return;
         }
 
-        setBlockEnabled(true);
         setBlockConfig(block.config || null);
-        loadRecommendations();
+        setBlockEnabled(true);
       })
       .catch((error) => {
         console.error(error);
         setBlockConfig(null);
         setLoading(false);
       })
-  }, [loadRecommendations]);
+  }, []);
+
+  useEffect(() => {
+    if (!blockEnabled || !blockConfig) return;
+
+    loadRecommendations();
+  }, [blockConfig, blockEnabled, loadRecommendations]);
 
   const handleProductClick = (product) => {
     trackThankYouClick(
@@ -115,7 +128,7 @@ function Extension() {
   const emptyMessage =
     blockConfig?.emptyMessage || 'No recommendations found';
 
-  if (!blockEnabled && !loading) return null;
+  if ((!blockEnabled || hiddenByConditions) && !loading) return null;
 
   return (
     <s-stack gap="base">

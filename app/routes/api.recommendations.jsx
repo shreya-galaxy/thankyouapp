@@ -13,6 +13,9 @@ export async function action({request}) {
     }
     const body = await request.json();
     const {orderId, orderNumber, checkoutToken} = body;
+    const productConditions = normalizeProductConditions(
+      body.productConditions,
+    );
     const shop =
       body.shop || process.env.SHOPIFY_SHOP_DOMAIN;
     const storefrontUrl =
@@ -94,6 +97,19 @@ export async function action({request}) {
       });
     }
 
+    if (!matchesProductConditions(purchasedProducts, productConditions)) {
+      return responseJson({
+        success: true,
+        eligible: false,
+        order: {
+          id: order.id,
+          name: order.name,
+        },
+        sourceProducts: purchasedProducts.map(productSummary),
+        products: [],
+      });
+    }
+
     const purchasedProductIds = new Set(
       purchasedProducts.map((product) => product.id),
     );
@@ -132,8 +148,7 @@ export async function action({request}) {
         name: order.name,
       },
       sourceProducts: purchasedProducts.map((product) => ({
-        id: product.id,
-        title: product.title,
+        ...productSummary(product),
       })),
       products: Array.from(recommendedProducts.values()).slice(0, 8),
     });
@@ -165,6 +180,16 @@ async function fetchOrderById(admin, adminOrderId) {
                   product {
                     id
                     title
+                    handle
+                    tags
+
+                    collections(first: 50) {
+                      nodes {
+                        id
+                        title
+                        handle
+                      }
+                    }
 
                     metafield(
                       namespace: "${RECOMMENDATION_METAFIELD.namespace}"
@@ -232,6 +257,16 @@ async function fetchOrderByQuery(admin, query) {
                   product {
                     id
                     title
+                    handle
+                    tags
+
+                    collections(first: 50) {
+                      nodes {
+                        id
+                        title
+                        handle
+                      }
+                    }
 
                     metafield(
                       namespace: "${RECOMMENDATION_METAFIELD.namespace}"
@@ -305,6 +340,112 @@ function graphQLErrorMessage(data) {
     .join(', ');
 
   return message || 'Could not load order from Shopify';
+}
+
+function matchesProductConditions(products, conditions) {
+  if (!conditions.length) return true;
+
+  return conditions.every((condition) => {
+    const matched = products.some((product) =>
+      productMatchesCondition(product, condition),
+    );
+
+    return condition.rule === 'exclude' ? !matched : matched;
+  });
+}
+
+function productMatchesCondition(product, condition) {
+  const wanted = condition.values
+    .flatMap((value) => [value.id, value.handle, value.label])
+    .map(normalizeToken)
+    .filter(Boolean);
+
+  if (!wanted.length) return false;
+
+  const actual =
+    condition.type === 'collections'
+      ? productCollections(product)
+      : productTags(product);
+
+  return actual.some((token) => wanted.includes(token));
+}
+
+function productTags(product) {
+  return Array.isArray(product?.tags)
+    ? product.tags.map(normalizeToken).filter(Boolean)
+    : [];
+}
+
+function productCollections(product) {
+  return (product?.collections?.nodes || [])
+    .flatMap((collection) => [
+      collection?.id,
+      collection?.handle,
+      collection?.title,
+    ])
+    .map(normalizeToken)
+    .filter(Boolean);
+}
+
+function normalizeProductConditions(value) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((condition) => {
+      const type =
+        condition?.type === 'collections' ? 'collections' : 'tags';
+      const rule =
+        condition?.rule === 'exclude' ? 'exclude' : 'include';
+      const values = Array.isArray(condition?.values)
+        ? condition.values.map(normalizeConditionValue).filter(Boolean)
+        : [];
+
+      if (!values.length) return null;
+
+      return {type, rule, values};
+    })
+    .filter(Boolean);
+}
+
+function normalizeConditionValue(value) {
+  if (typeof value === 'string') {
+    const label = value.trim();
+
+    return label ? {label} : null;
+  }
+
+  if (!value || typeof value !== 'object') return null;
+
+  const label =
+    stringValue(value.label) ||
+    stringValue(value.title) ||
+    stringValue(value.handle) ||
+    stringValue(value.id);
+
+  if (!label) return null;
+
+  return {
+    id: stringValue(value.id),
+    handle: stringValue(value.handle),
+    label,
+  };
+}
+
+function productSummary(product) {
+  return {
+    id: product.id,
+    title: product.title,
+  };
+}
+
+function normalizeToken(value) {
+  return typeof value === 'string'
+    ? value.trim().toLowerCase()
+    : '';
+}
+
+function stringValue(value) {
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function responseJson(data) {

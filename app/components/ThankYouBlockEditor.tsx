@@ -1,4 +1,10 @@
-import type {ThankYouBlockConfig, ThankYouBlockType} from "../models/thankYouBlock";
+import type {
+  CheckoutUpsellProduct,
+  ProductCondition,
+  ProductConditionValue,
+  ThankYouBlockConfig,
+  ThankYouBlockType,
+} from "../models/thankYouBlock";
 import {useAppBridge} from "@shopify/app-bridge-react";
 import {blockTemplates, validateBlockForm} from "../models/thankYouBlock";
 import {
@@ -71,6 +77,17 @@ const submitStyle: CSSProperties = {
   border: 0,
   borderRadius: "8px",
   color: "#fff",
+  cursor: "pointer",
+  font: "inherit",
+  fontWeight: 650,
+  padding: "10px 14px",
+};
+
+const secondaryButtonStyle: CSSProperties = {
+  background: "#fff",
+  border: "1px solid #c9cccf",
+  borderRadius: "8px",
+  color: "#303030",
   cursor: "pointer",
   font: "inherit",
   fontWeight: 650,
@@ -285,6 +302,8 @@ export function ThankYouBlockEditor({
                   <ReferralFields config={config} />
                 ) : type === "loyalty" ? (
                   <LoyaltyFields config={config} />
+                ) : type === "checkoutUpsell" ? (
+                  <CheckoutUpsellFields config={config} />
                 ) : (
                   <UpsellFields config={config} />
                 )}
@@ -1274,4 +1293,442 @@ function UpsellFields({config}: {config: ThankYouBlockConfig}) {
       </s-box>
     </s-stack>
   );
+}
+
+function CheckoutUpsellFields({config}: {config: ThankYouBlockConfig}) {
+  const shopify = useAppBridge();
+  const [products, setProducts] = useState<CheckoutUpsellProduct[]>(
+    Array.isArray(config.checkoutUpsellProducts)
+      ? config.checkoutUpsellProducts
+      : [],
+  );
+
+  const openProductPicker = async () => {
+    const picker = (shopify as unknown as {
+      resourcePicker?: (
+        options: Record<string, unknown>,
+      ) => Promise<unknown[] | undefined>;
+    }).resourcePicker;
+
+    if (!picker) {
+      window.alert("Product picker is not available.");
+      return;
+    }
+
+    const selection = await picker({
+      type: "product",
+      multiple: true,
+      selectionIds: products.map((product) => ({
+        id: product.id,
+        variants: product.variants.map((variant) => ({id: variant.id})),
+      })),
+    });
+
+    if (!selection) return;
+
+    setProducts(
+      selection
+        .map(normalizePickedProduct)
+        .filter(Boolean) as CheckoutUpsellProduct[],
+    );
+  };
+
+  const removeProduct = (productId: string) => {
+    setProducts((current) =>
+      current.filter((product) => product.id !== productId),
+    );
+  };
+
+  return (
+    <s-stack gap="base">
+      <div>
+        <label style={labelStyle} htmlFor="checkoutUpsellHeading">
+          Section header
+        </label>
+        <input
+          defaultValue={
+            config.checkoutUpsellHeading || "You might also like these"
+          }
+          id="checkoutUpsellHeading"
+          maxLength={80}
+          name="checkoutUpsellHeading"
+          style={fieldStyle}
+          required
+        />
+      </div>
+
+      <ProductConditionFields config={config} />
+
+      <input
+        name="checkoutUpsellProducts"
+        type="hidden"
+        value={JSON.stringify(products)}
+        readOnly
+      />
+
+      <s-stack gap="small">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            justifyContent: "space-between",
+          }}
+        >
+          <s-heading>Products</s-heading>
+          <button type="button" onClick={openProductPicker} style={submitStyle}>
+            Browse products
+          </button>
+        </div>
+
+        {products.length ? (
+          <div style={{display: "grid", gap: "10px"}}>
+            {products.map((product) => (
+              <div
+                key={product.id}
+                style={{
+                  alignItems: "center",
+                  border: "1px solid #d7dce0",
+                  borderRadius: "8px",
+                  display: "grid",
+                  gap: "12px",
+                  gridTemplateColumns: "48px minmax(0, 1fr) auto",
+                  padding: "10px",
+                }}
+              >
+                {product.image ? (
+                  <img
+                    alt=""
+                    src={product.image}
+                    style={{
+                      borderRadius: "6px",
+                      height: "48px",
+                      objectFit: "cover",
+                      width: "48px",
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      background: "#f1f2f4",
+                      borderRadius: "6px",
+                      height: "48px",
+                      width: "48px",
+                    }}
+                  />
+                )}
+
+                <div style={{minWidth: 0}}>
+                  <div
+                    style={{
+                      fontWeight: 650,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {product.title}
+                  </div>
+                  <div style={{color: "#616a75", fontSize: "12px"}}>
+                    {product.variants.length} variant
+                    {product.variants.length === 1 ? "" : "s"} available
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => removeProduct(product.id)}
+                  style={{
+                    background: "transparent",
+                    border: 0,
+                    color: "#d82c0d",
+                    cursor: "pointer",
+                    font: "inherit",
+                  }}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <s-box padding="base" borderWidth="base" borderRadius="base">
+            <s-text color="subdued">
+              Select products to offer on the checkout page.
+            </s-text>
+          </s-box>
+        )}
+      </s-stack>
+
+      <s-box padding="base" borderWidth="base" borderRadius="base">
+        <s-text>
+          Customers can add these products directly from checkout. Stores must
+          allow cart line changes in checkout for the Add button to work.
+        </s-text>
+      </s-box>
+
+    </s-stack>
+  );
+}
+
+function ProductConditionFields({config}: {config: ThankYouBlockConfig}) {
+  const shopify = useAppBridge();
+  const initialCondition =
+    config.productConditions?.[0] || defaultProductCondition();
+  const [condition, setCondition] =
+    useState<ProductCondition>(initialCondition);
+  const valuesText = condition.values.map((value) => value.label).join(", ");
+
+  const updateCondition = (next: Partial<ProductCondition>) => {
+    setCondition((current) => ({
+      ...current,
+      ...next,
+    }));
+  };
+
+  const updateTags = (value: string) => {
+    updateCondition({
+      values: value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .map((label) => ({label})),
+    });
+  };
+
+  const openCollectionPicker = async () => {
+    const picker = (shopify as unknown as {
+      resourcePicker?: (
+        options: Record<string, unknown>,
+      ) => Promise<unknown[] | undefined>;
+    }).resourcePicker;
+
+    if (!picker) {
+      window.alert("Collection picker is not available.");
+      return;
+    }
+
+    const selection = await picker({
+      type: "collection",
+      multiple: true,
+      selectionIds: condition.values
+        .filter((value) => value.id)
+        .map((value) => ({id: value.id})),
+    });
+
+    if (!selection) return;
+
+    updateCondition({
+      values: selection
+        .map(normalizePickedCollection)
+        .filter(Boolean) as ProductConditionValue[],
+    });
+  };
+
+  const hiddenConditions = condition.values.length ? [condition] : [];
+
+  return (
+    <s-stack gap="base">
+      <s-heading>Condition</s-heading>
+      <input
+        name="productConditions"
+        type="hidden"
+        value={JSON.stringify(hiddenConditions)}
+        readOnly
+      />
+
+      <div
+        style={{
+          border: "1px solid #d7dce0",
+          borderRadius: "8px",
+          display: "grid",
+          gap: "12px",
+          padding: "12px",
+        }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gap: "12px",
+            gridTemplateColumns:
+              "minmax(130px, 0.75fr) minmax(130px, 0.75fr) minmax(220px, 2fr)",
+          }}
+        >
+          <div>
+            <label style={labelStyle} htmlFor="productConditionType">
+              Condition
+            </label>
+            <select
+              id="productConditionType"
+              value={condition.type}
+              onChange={(event) =>
+                setCondition({
+                  type: (event.target as HTMLSelectElement)
+                    .value as ProductCondition["type"],
+                  rule: condition.rule,
+                  values: [],
+                })
+              }
+              style={fieldStyle}
+            >
+              {/* <optgroup> */}
+                {/* <option value="tags">Tags</option> */}
+                <option value="collections">Collections</option>
+              {/* </optgroup> */}
+            </select>
+          </div>
+
+          <div>
+            <label style={labelStyle} htmlFor="productConditionRule">
+              Type
+            </label>
+            <select
+              id="productConditionRule"
+              value={condition.rule}
+              onChange={(event) =>
+                updateCondition({
+                  rule: (event.target as HTMLSelectElement)
+                    .value as ProductCondition["rule"],
+                })
+              }
+              style={fieldStyle}
+            >
+              <option value="include">Includes</option>
+              <option value="exclude">Excludes</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={labelStyle} htmlFor="productConditionValues">
+              Value
+            </label>
+            {/* {condition.type === "tags" ? (
+              <input
+                id="productConditionValues"
+                onChange={(event) => updateTags(event.target.value)}
+                placeholder="Select tags"
+                style={fieldStyle}
+                value={valuesText}
+              />
+            ) : ( */}
+              <div style={{display: "grid", gap: "8px"}}>
+                <button
+                  type="button"
+                  onClick={openCollectionPicker}
+                  style={secondaryButtonStyle}
+                >
+                  Select collections
+                </button>
+                {condition.values.length ? (
+                  <div style={{color: "#616a75", fontSize: "13px"}}>
+                    {valuesText}
+                  </div>
+                ) : null}
+              </div>
+            {/* )} */}
+          </div>
+        </div>
+      </div>
+    </s-stack>
+  );
+}
+
+function defaultProductCondition(): ProductCondition {
+  return {
+    type: "tags",
+    rule: "include",
+    values: [],
+  };
+}
+
+function normalizePickedCollection(value: unknown): ProductConditionValue | null {
+  const collection =
+    value && typeof value === "object"
+      ? (value as Record<string, unknown>)
+      : null;
+
+  if (!collection) return null;
+
+  const id = stringValue(collection.id);
+  const label =
+    stringValue(collection.title) ||
+    stringValue(collection.handle) ||
+    id;
+
+  if (!label) return null;
+
+  return {
+    id,
+    label,
+    handle: stringValue(collection.handle),
+  };
+}
+
+function normalizePickedProduct(value: unknown): CheckoutUpsellProduct | null {
+  const product =
+    value && typeof value === "object"
+      ? (value as Record<string, unknown>)
+      : null;
+
+  if (!product) return null;
+
+  const id = stringValue(product.id);
+  const title = stringValue(product.title);
+  const variants = Array.isArray(product.variants)
+    ? product.variants
+        .map((variant) => {
+          const record =
+            variant && typeof variant === "object"
+              ? (variant as Record<string, unknown>)
+              : {};
+
+          return {
+            id: stringValue(record.id),
+            title: stringValue(record.title) || "Default",
+            price: stringValue(record.price),
+          };
+        })
+        .filter((variant) => variant.id)
+    : [];
+
+  if (!id || !title || !variants.length) return null;
+
+  return {
+    id,
+    title,
+    handle: stringValue(product.handle),
+    image:
+      firstImageUrl(product.images) ||
+      firstImageUrl(product.featuredImage) ||
+      "",
+    tags: stringArray(product.tags),
+    collections: normalizePickedCollections(product.collections),
+    variants,
+  };
+}
+
+function normalizePickedCollections(value: unknown): ProductConditionValue[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map(normalizePickedCollection)
+    .filter(Boolean) as ProductConditionValue[];
+}
+
+function firstImageUrl(value: unknown) {
+  const image = Array.isArray(value) ? value[0] : value;
+  const record =
+    image && typeof image === "object" ? (image as Record<string, unknown>) : {};
+
+  return stringValue(record.originalSrc) || stringValue(record.url);
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" ? value : "";
+}
+
+function stringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
 }
