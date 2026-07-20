@@ -4,7 +4,6 @@ import type {
   ProductConditionValue,
   ThankYouBlockConfig,
   ThankYouBlockType,
-  CheckoutUpsellSource
 } from "../models/thankYouBlock";
 import {useAppBridge} from "@shopify/app-bridge-react";
 import {blockTemplates, validateBlockForm} from "../models/thankYouBlock";
@@ -1304,15 +1303,6 @@ function CheckoutUpsellFields({config}: {config: ThankYouBlockConfig}) {
       : [],
   );
 
-  const [offerSource, setOfferSource] = useState<CheckoutUpsellSource>(
-    config.checkoutUpsellSource ||
-      config.CheckoutUpsellSource ||
-      "specific_products",
-  );
-  const [maxProducts, setMaxProducts] = useState(
-    String(config.checkoutUpsellMaxProducts || 4),
-  );
-
   const openProductPicker = async () => {
     const picker = (shopify as unknown as {
       resourcePicker?: (
@@ -1352,11 +1342,6 @@ function CheckoutUpsellFields({config}: {config: ThankYouBlockConfig}) {
   return (
     <s-stack gap="base">
       <div>
-        <input
-          type="hidden"
-          name="checkoutUpsellSource"
-          value={offerSource}
-        />
         <label style={labelStyle} htmlFor="checkoutUpsellHeading">
           Section header
         </label>
@@ -1371,211 +1356,116 @@ function CheckoutUpsellFields({config}: {config: ThankYouBlockConfig}) {
           required
         />
       </div>
-      <div
-        style={{
-          borderTop: "1px solid #e1e3e5",
-          margin: "8px 0",
-        }}
-      />
 
       <ProductConditionFields config={config} />
-      <div
-        style={{
-          borderTop: "1px solid #e1e3e5",
-          margin: "8px 0",
-        }}
+
+      <input
+        name="checkoutUpsellProducts"
+        type="hidden"
+        value={JSON.stringify(products)}
+        readOnly
       />
 
       <s-stack gap="small">
-        <s-heading>Offers</s-heading>
-        <s-text>
-          The selected products will be shown when user is on checkout summary page.
-        </s-text>
-
-        <label>
-          <input
-            type="radio"
-            checked={offerSource === "specific_products"}
-            onChange={() => setOfferSource("specific_products")}
-          />
-          Specific Products
-        </label>
-
-        <label>
-          <input
-            type="radio"
-            checked={offerSource === "related_products"}
-            onChange={() => setOfferSource("related_products")}
-          />
-          Shopify recommendations
-        </label>
-
-        <label>
-          <input
-            type="radio"
-            checked={offerSource === "collection"}
-            onChange={() => setOfferSource("collection")}
-          />
-          Collection Recommendations
-        </label>
-      </s-stack>
-
-      {offerSource !== "specific_products" && (
-        <div>
-          <label style={labelStyle} htmlFor="checkoutUpsellMaxProducts">
-            Maximum Products to Show
-          </label>
-          <input
-            id="checkoutUpsellMaxProducts"
-            min={1}
-            max={20}
-            name="checkoutUpsellMaxProducts"
-            onChange={(event) =>
-              setMaxProducts((event.target as HTMLInputElement).value)
-            }
-            style={{...fieldStyle, maxWidth: "160px"}}
-            type="number"
-            value={maxProducts}
-          />
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            justifyContent: "space-between",
+          }}
+        >
+          <s-heading>Products</s-heading>
+          <button type="button" onClick={openProductPicker} style={submitStyle}>
+            Browse products
+          </button>
         </div>
-      )}
 
-      {offerSource === "related_products" && (
-        <s-box
-          padding="base"
-          borderWidth="base"
-          borderRadius="base"
-        >
-          <s-text>
-            Products will be recommended using Shopify&apos;s Related Products API based
-            on the products currently in the customer&apos;s cart.
-          </s-text>
-        </s-box>
-      )}
-
-      {offerSource === "collection" && (
-        <s-box
-          padding="base"
-          borderWidth="base"
-          borderRadius="base"
-        >
-          <s-text>
-            Products will be recommended from collections that contain products
-            currently in the customer&apos;s cart.
-          </s-text>
-        </s-box>
-      )}
-
-      {offerSource === "specific_products" && (
-         <>
-          <input
-            name="checkoutUpsellProducts"
-            type="hidden"
-            value={JSON.stringify(products)}
-            readOnly
-          />
-          <s-stack gap="small">
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                justifyContent: "space-between",
-              }}
-            >
-              <s-heading>Products</s-heading>
-              <button type="button" onClick={openProductPicker} style={submitStyle}>
-                Browse products
-              </button>
-            </div>
-
-            {products.length ? (
-              <div style={{display: "grid", gap: "10px"}}>
-                {products.map((product) => (
-                  <div
-                    key={product.id}
+        {products.length ? (
+          <div style={{display: "grid", gap: "10px"}}>
+            {products.map((product) => (
+              <div
+                key={product.id}
+                style={{
+                  alignItems: "center",
+                  border: "1px solid #d7dce0",
+                  borderRadius: "8px",
+                  display: "grid",
+                  gap: "12px",
+                  gridTemplateColumns: "48px minmax(0, 1fr) auto",
+                  padding: "10px",
+                }}
+              >
+                {product.image ? (
+                  <img
+                    alt=""
+                    src={product.image}
                     style={{
-                      alignItems: "center",
-                      border: "1px solid #d7dce0",
-                      borderRadius: "8px",
-                      display: "grid",
-                      gap: "12px",
-                      gridTemplateColumns: "48px minmax(0, 1fr) auto",
-                      padding: "10px",
+                      borderRadius: "6px",
+                      height: "48px",
+                      objectFit: "cover",
+                      width: "48px",
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      background: "#f1f2f4",
+                      borderRadius: "6px",
+                      height: "48px",
+                      width: "48px",
+                    }}
+                  />
+                )}
+
+                <div style={{minWidth: 0}}>
+                  <div
+                    style={{
+                      fontWeight: 650,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    {product.image ? (
-                      <img
-                        alt=""
-                        src={product.image}
-                        style={{
-                          borderRadius: "6px",
-                          height: "48px",
-                          objectFit: "cover",
-                          width: "48px",
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          background: "#f1f2f4",
-                          borderRadius: "6px",
-                          height: "48px",
-                          width: "48px",
-                        }}
-                      />
-                    )}
-
-                    <div style={{minWidth: 0}}>
-                      <div
-                        style={{
-                          fontWeight: 650,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {product.title}
-                      </div>
-                      <div style={{color: "#616a75", fontSize: "12px"}}>
-                        {product.variants.length} variant
-                        {product.variants.length === 1 ? "" : "s"} available
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => removeProduct(product.id)}
-                      style={{
-                        background: "transparent",
-                        border: 0,
-                        color: "#d82c0d",
-                        cursor: "pointer",
-                        font: "inherit",
-                      }}
-                    >
-                      Remove
-                    </button>
+                    {product.title}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <s-box padding="base" borderWidth="base" borderRadius="base">
-                <s-text color="subdued">
-                  Select products to offer on the checkout page.
-                </s-text>
-              </s-box>
-            )}
-          </s-stack>
+                  <div style={{color: "#616a75", fontSize: "12px"}}>
+                    {product.variants.length} variant
+                    {product.variants.length === 1 ? "" : "s"} available
+                  </div>
+                </div>
 
+                <button
+                  type="button"
+                  onClick={() => removeProduct(product.id)}
+                  style={{
+                    background: "transparent",
+                    border: 0,
+                    color: "#d82c0d",
+                    cursor: "pointer",
+                    font: "inherit",
+                  }}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
           <s-box padding="base" borderWidth="base" borderRadius="base">
-            <s-text>
-              Customers can add these products directly from checkout. Stores must
-              allow cart line changes in checkout for the Add button to work.
+            <s-text color="subdued">
+              Select products to offer on the checkout page.
             </s-text>
           </s-box>
-       </>
-      )}
+        )}
+      </s-stack>
+
+      <s-box padding="base" borderWidth="base" borderRadius="base">
+        <s-text>
+          Customers can add these products directly from checkout. Stores must
+          allow cart line changes in checkout for the Add button to work.
+        </s-text>
+      </s-box>
 
     </s-stack>
   );
@@ -1594,6 +1484,16 @@ function ProductConditionFields({config}: {config: ThankYouBlockConfig}) {
       ...current,
       ...next,
     }));
+  };
+
+  const updateTags = (value: string) => {
+    updateCondition({
+      values: value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .map((label) => ({label})),
+    });
   };
 
   const openCollectionPicker = async () => {
@@ -1625,15 +1525,11 @@ function ProductConditionFields({config}: {config: ThankYouBlockConfig}) {
     });
   };
 
-  const hiddenConditions =
-    condition.type === "all" ? [] : condition.values.length ? [condition] : [];
+  const hiddenConditions = condition.values.length ? [condition] : [];
 
   return (
     <s-stack gap="base">
-      <s-heading>Trigger</s-heading>
-      <s-text>
-        Select the products for which the offer is displayed.
-      </s-text>
+      <s-heading>Condition</s-heading>
       <input
         name="productConditions"
         type="hidden"
@@ -1641,7 +1537,7 @@ function ProductConditionFields({config}: {config: ThankYouBlockConfig}) {
         readOnly
       />
 
-      {/* <div
+      <div
         style={{
           border: "1px solid #d7dce0",
           borderRadius: "8px",
@@ -1649,7 +1545,7 @@ function ProductConditionFields({config}: {config: ThankYouBlockConfig}) {
           gap: "12px",
           padding: "12px",
         }}
-      > */}
+      >
         <div
           style={{
             display: "grid",
@@ -1677,16 +1573,11 @@ function ProductConditionFields({config}: {config: ThankYouBlockConfig}) {
             >
               {/* <optgroup> */}
                 {/* <option value="tags">Tags</option> */}
-                <option value="all">
-                  All Products
-                </option>
                 <option value="collections">Collections</option>
               {/* </optgroup> */}
             </select>
           </div>
 
-         {condition.type === "collections" && (
-          <>
           <div>
             <label style={labelStyle} htmlFor="productConditionRule">
               Type
@@ -1711,32 +1602,40 @@ function ProductConditionFields({config}: {config: ThankYouBlockConfig}) {
             <label style={labelStyle} htmlFor="productConditionValues">
               Value
             </label>
-            <div style={{display: "grid", gap: "8px"}}>
-              <button
-                type="button"
-                onClick={openCollectionPicker}
-                style={secondaryButtonStyle}
-              >
-                Select collections
-              </button>
-              {condition.values.length ? (
-                <div style={{color: "#616a75", fontSize: "13px"}}>
-                  {valuesText}
-                </div>
-              ) : null}
-            </div>
+            {/* {condition.type === "tags" ? (
+              <input
+                id="productConditionValues"
+                onChange={(event) => updateTags(event.target.value)}
+                placeholder="Select tags"
+                style={fieldStyle}
+                value={valuesText}
+              />
+            ) : ( */}
+              <div style={{display: "grid", gap: "8px"}}>
+                <button
+                  type="button"
+                  onClick={openCollectionPicker}
+                  style={secondaryButtonStyle}
+                >
+                  Select collections
+                </button>
+                {condition.values.length ? (
+                  <div style={{color: "#616a75", fontSize: "13px"}}>
+                    {valuesText}
+                  </div>
+                ) : null}
+              </div>
+            {/* )} */}
           </div>
-          </>
-          )}
         </div>
-      {/* </div> */}
+      </div>
     </s-stack>
   );
 }
 
 function defaultProductCondition(): ProductCondition {
   return {
-    type: "all",
+    type: "tags",
     rule: "include",
     values: [],
   };

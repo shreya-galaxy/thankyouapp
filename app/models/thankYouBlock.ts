@@ -23,8 +23,12 @@ export type CheckoutUpsellProduct = {
     price?: string;
   }>;
 };
+export type CheckoutUpsellSource =
+  | "specific_products"
+  | "related_products"
+  | "collection";
 
-export type ProductConditionType = "tags" | "collections";
+export type ProductConditionType = "all" | "tags" | "collections";
 export type ProductConditionRule = "include" | "exclude";
 export type ProductConditionValue = {
   id?: string;
@@ -51,6 +55,9 @@ export type ThankYouBlockConfig = {
   productConditions?: ProductCondition[];
   checkoutUpsellHeading?: string;
   checkoutUpsellProducts?: CheckoutUpsellProduct[];
+  checkoutUpsellSource?: CheckoutUpsellSource;
+  CheckoutUpsellSource?: CheckoutUpsellSource;
+  checkoutUpsellMaxProducts?: number;
   title?: string;
   description?: string;
   buttonText?: string;
@@ -127,6 +134,8 @@ export const blockTemplates = {
     defaultConfig: {
       checkoutUpsellHeading: "You might also like these",
       checkoutUpsellProducts: [],
+      checkoutUpsellSource: "specific_products",
+      checkoutUpsellMaxProducts: 4,
     },
   },
   discount: {
@@ -285,6 +294,8 @@ export function configFromForm(
   if (type === "checkoutUpsell") {
     return {
       checkoutUpsellHeading: field(formData, "checkoutUpsellHeading"),
+      checkoutUpsellSource: checkoutUpsellSourceFromForm(formData),
+      checkoutUpsellMaxProducts: checkoutUpsellMaxProductsFromForm(formData),
       checkoutUpsellProducts: checkoutUpsellProductsFromForm(formData),
       productConditions: productConditionsFromForm(formData),
     };
@@ -363,14 +374,26 @@ export function validateBlockForm(
   if (type === "checkoutUpsell") {
     requireText(errors, formData, "checkoutUpsellHeading", "Section header");
 
-    if (!checkoutUpsellProductsFromForm(formData).length) {
+    const checkoutUpsellSource = checkoutUpsellSourceFromForm(formData);
+
+    if (
+      checkoutUpsellSource === "specific_products" &&
+      !checkoutUpsellProductsFromForm(formData).length
+    ) {
       errors.push("Select at least one checkout upsell product.");
+    }
+
+    if (
+      checkoutUpsellSource !== "specific_products" &&
+      checkoutUpsellMaxProductsFromForm(formData) < 1
+    ) {
+      errors.push("Maximum products to show must be at least 1.");
     }
   }
 
   if (type === "upsell" || type === "checkoutUpsell") {
     productConditionsFromForm(formData).forEach((condition, index) => {
-      if (!condition.values.length) {
+      if (condition.type !== "all" && !condition.values.length) {
         errors.push(`Condition ${index + 1} needs at least one value.`);
       }
     });
@@ -573,6 +596,24 @@ function checkoutUpsellProductsFromForm(formData: FormData) {
   }
 }
 
+function checkoutUpsellSourceFromForm(formData: FormData): CheckoutUpsellSource {
+  const value = field(formData, "checkoutUpsellSource");
+
+  if (value === "related_products" || value === "collection") {
+    return value;
+  }
+
+  return "specific_products";
+}
+
+function checkoutUpsellMaxProductsFromForm(formData: FormData) {
+  const value = Number(field(formData, "checkoutUpsellMaxProducts"));
+
+  if (!Number.isFinite(value)) return 4;
+
+  return Math.max(1, Math.min(20, Math.floor(value)));
+}
+
 function productConditionsFromForm(formData: FormData): ProductCondition[] {
   const value = field(formData, "productConditions");
 
@@ -594,10 +635,22 @@ function productConditionsFromForm(formData: FormData): ProductCondition[] {
               })
             : {};
         const type =
-          condition.type === "collections" ? "collections" : "tags";
+          condition.type === "all"
+            ? "all"
+            : condition.type === "collections"
+              ? "collections"
+              : "tags";
         const rule =
           condition.rule === "exclude" ? "exclude" : "include";
         const values = productConditionValues(condition.values);
+
+        if (type === "all") {
+          return {
+            type,
+            rule: "include",
+            values: [],
+          };
+        }
 
         if (!values.length) return null;
 
