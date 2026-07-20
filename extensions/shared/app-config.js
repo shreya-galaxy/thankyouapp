@@ -40,7 +40,7 @@ const BUILD_APP_URL =
   '';
 
 const FALLBACK_APP_URLS = [
-  'https://thankyouapp-production-a309.up.railway.app',
+  'https://brochure-professor-wider-generators.trycloudflare.com',
   'https://thankyouapp-production-a309.up.railway.app',
 ];
 

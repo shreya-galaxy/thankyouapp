@@ -1,4 +1,5 @@
 /* global globalThis */
+/* eslint react/prop-types: off */
 import '@shopify/ui-extensions/preact';
 import {render} from 'preact';
 import {useEffect, useMemo, useState} from 'preact/hooks';
@@ -18,6 +19,7 @@ export default () => {
 
 function Extension() {
   const [config, setConfig] = useState(null);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [eligible, setEligible] = useState(true);
 
@@ -38,13 +40,25 @@ function Extension() {
           return;
         }
 
-        const products = await conditionProducts(nextConfig);
+        const sourceProducts = await conditionProducts(nextConfig);
+        const nextEligible = matchesProductConditions(
+          sourceProducts,
+          nextConfig.productConditions,
+        );
+
+        if (!nextEligible) {
+          if (mounted) {
+            setEligible(false);
+            setProducts([]);
+          }
+          return;
+        }
+
+        const nextProducts = await offerProducts(nextConfig);
 
         if (mounted) {
-          setEligible(matchesProductConditions(
-            products,
-            nextConfig.productConditions,
-          ));
+          setEligible(true);
+          setProducts(nextProducts);
         }
       } catch (error) {
         console.error(error);
@@ -73,10 +87,6 @@ function Extension() {
     );
   }
 
-  const products = Array.isArray(config?.checkoutUpsellProducts)
-    ? config.checkoutUpsellProducts.filter((product) => product?.variants?.length)
-    : [];
-
   if (!eligible || !config || !products.length) return null;
 
   const heading = limitText(
@@ -100,6 +110,7 @@ function Extension() {
 function CheckoutUpsellProduct({product}) {
   const firstVariant = product.variants[0];
   const [variantId, setVariantId] = useState(firstVariant.id);
+  const [quantity, setQuantity] = useState(1);
   const [adding, setAdding] = useState(false);
   const [message, setMessage] = useState('');
   const [tone, setTone] = useState(
@@ -131,7 +142,7 @@ function CheckoutUpsellProduct({product}) {
       const result = await extensionApi.applyCartLinesChange({
         type: 'addCartLine',
         merchandiseId: selectedVariant.id,
-        quantity: 1,
+        quantity,
       });
 
       if (result?.type === 'error') {
@@ -141,7 +152,7 @@ function CheckoutUpsellProduct({product}) {
       }
 
       setTone('success');
-      setMessage('Added to cart.');
+      // setMessage('Added to cart.');
     } catch (error) {
       setTone('critical');
       setMessage(error?.message || 'Could not add this product.');
@@ -190,6 +201,58 @@ function CheckoutUpsellProduct({product}) {
             </s-select>
           )}
 
+          {/* <s-grid
+            gap="small-200"
+            gridTemplateColumns="auto 48px auto"
+            alignItems="end"
+          >
+            <s-button
+              disabled={adding || quantity <= 1}
+              onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+            >
+              -
+            </s-button>
+            <s-text-field
+              // label="Quantity"
+              type="number"
+              value={String(quantity)}
+              onInput={(event) => setQuantity(normalizeQuantity(event.target.value))}
+            />
+            <s-button
+              disabled={adding}
+              onClick={() => setQuantity((current) => Math.min(99, current + 1))}
+            >
+              +
+            </s-button>
+          </s-grid> */}
+          <s-grid
+  gridTemplateColumns="32px 42px 32px"
+  gap="small-200"
+  alignItems="center"
+>
+  <s-button
+    disabled={adding || quantity <= 1}
+    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+  >
+    −
+  </s-button>
+
+  <s-text-field
+    type="number"
+    value={String(quantity)}
+    onInput={(event) =>
+      setQuantity(normalizeQuantity(event.target.value))
+    }
+  />
+
+  <s-button
+    disabled={adding}
+    onClick={() => setQuantity((q) => Math.min(99, q + 1))}
+  >
+    +
+  </s-button>
+</s-grid>
+
           {message && <s-text tone={tone}>{message}</s-text>}
         </s-stack>
 
@@ -198,6 +261,216 @@ function CheckoutUpsellProduct({product}) {
         </s-button>
       </s-grid>
     </s-box>
+  );
+}
+
+async function offerProducts(config) {
+  const source =
+    config?.checkoutUpsellSource ||
+    config?.CheckoutUpsellSource ||
+    'specific_products';
+  const maxProducts = maxProductsToShow(config);
+  const cartProductIds = currentCartProductIds();
+
+  if (source === 'related_products') {
+    return limitProducts(
+      await shopifyRecommendationProducts(cartProductIds, maxProducts),
+      maxProducts,
+    );
+  }
+
+  if (source === 'collection') {
+    return limitProducts(
+      await collectionRecommendationProducts(cartProductIds, maxProducts),
+      maxProducts,
+    );
+  }
+
+  const selectedProducts = Array.isArray(config?.checkoutUpsellProducts)
+    ? config.checkoutUpsellProducts
+    : [];
+
+  return limitProducts(
+    selectedProducts.filter(
+      (product) => product?.variants?.length && !cartProductIds.has(product.id),
+    ),
+    selectedProducts.length,
+  );
+}
+
+async function shopifyRecommendationProducts(cartProductIds, maxProducts) {
+  const extensionApi =
+    typeof globalThis !== 'undefined' ? globalThis.shopify : shopify;
+
+  if (!extensionApi?.query || !cartProductIds.size) return [];
+
+  const recommendedProducts = new Map();
+
+  for (const productId of cartProductIds) {
+    const result = await extensionApi.query(
+      `query CheckoutProductRecommendations($productId: ID!) {
+        productRecommendations(productId: $productId) {
+          ...CheckoutUpsellProductFields
+        }
+      }
+
+      fragment CheckoutUpsellProductFields on Product {
+        id
+        title
+        handle
+        featuredImage {
+          url
+        }
+        variants(first: 10) {
+          nodes {
+            id
+            title
+            availableForSale
+            price {
+              amount
+              currencyCode
+            }
+          }
+        }
+      }`,
+      {
+        variables: {
+          productId,
+        },
+      },
+    );
+
+    addRecommendedProducts(
+      recommendedProducts,
+      result?.data?.productRecommendations || [],
+      cartProductIds,
+    );
+
+    if (recommendedProducts.size >= maxProducts) break;
+  }
+
+  return Array.from(recommendedProducts.values());
+}
+
+async function collectionRecommendationProducts(cartProductIds, maxProducts) {
+  const extensionApi =
+    typeof globalThis !== 'undefined' ? globalThis.shopify : shopify;
+  const productIds = Array.from(cartProductIds);
+
+  if (!extensionApi?.query || !productIds.length) return [];
+
+  const result = await extensionApi.query(
+    `query CheckoutCollectionRecommendations($ids: [ID!]!, $limit: Int!) {
+      nodes(ids: $ids) {
+        ... on Product {
+          collections(first: 10) {
+            nodes {
+              products(first: $limit) {
+                nodes {
+                  ...CheckoutUpsellProductFields
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    fragment CheckoutUpsellProductFields on Product {
+      id
+      title
+      handle
+      featuredImage {
+        url
+      }
+      variants(first: 10) {
+        nodes {
+          id
+          title
+          availableForSale
+          price {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }`,
+    {
+      variables: {
+        ids: productIds,
+        limit: Math.max(maxProducts, 4),
+      },
+    },
+  );
+
+  const recommendedProducts = new Map();
+  const products = (result?.data?.nodes || [])
+    .flatMap((product) => product?.collections?.nodes || [])
+    .flatMap((collection) => collection?.products?.nodes || []);
+
+  addRecommendedProducts(recommendedProducts, products, cartProductIds);
+
+  return Array.from(recommendedProducts.values());
+}
+
+function addRecommendedProducts(recommendedProducts, products, cartProductIds) {
+  products
+    .map(normalizeStorefrontProduct)
+    .filter(Boolean)
+    .forEach((product) => {
+      if (cartProductIds.has(product.id) || recommendedProducts.has(product.id)) {
+        return;
+      }
+
+      recommendedProducts.set(product.id, product);
+    });
+}
+
+function normalizeStorefrontProduct(product) {
+  if (!product?.id || !product?.title) return null;
+
+  const variants = (product?.variants?.nodes || [])
+    .filter((variant) => variant?.id && variant.availableForSale !== false)
+    .map((variant) => ({
+      id: variant.id,
+      title: variant.title || 'Default',
+      price: formatMoney(variant.price),
+    }));
+
+  if (!variants.length) return null;
+
+  return {
+    id: product.id,
+    title: product.title,
+    handle: product.handle || '',
+    image: product.featuredImage?.url || '',
+    variants,
+  };
+}
+
+function limitProducts(products, maxProducts) {
+  const limit = Math.max(1, Math.min(20, Number(maxProducts) || 4));
+
+  return products.slice(0, limit);
+}
+
+function maxProductsToShow(config) {
+  const value = Number(config?.checkoutUpsellMaxProducts);
+
+  if (!Number.isFinite(value)) return 4;
+
+  return Math.max(1, Math.min(20, Math.floor(value)));
+}
+
+function currentCartProductIds() {
+  const extensionApi =
+    typeof globalThis !== 'undefined' ? globalThis.shopify : shopify;
+  const lines = currentValue(extensionApi?.lines) || [];
+
+  return new Set(
+    lines
+      .map((line) => line?.merchandise?.product?.id)
+      .filter(Boolean),
   );
 }
 
@@ -372,6 +645,30 @@ function normalizeConditionValue(value) {
 
 function currentValue(value) {
   return value?.current || value;
+}
+
+function normalizeQuantity(value) {
+  const quantity = Number(value);
+
+  if (!Number.isFinite(quantity)) return 1;
+
+  return Math.max(1, Math.min(99, Math.floor(quantity)));
+}
+
+function formatMoney(value) {
+  const amount = Number(value?.amount);
+  const currencyCode = value?.currencyCode;
+
+  if (!Number.isFinite(amount) || !currencyCode) return '';
+
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currencyCode,
+    }).format(amount);
+  } catch (error) {
+    return `${amount.toFixed(2)} ${currencyCode}`;
+  }
 }
 
 function normalizeToken(value) {
