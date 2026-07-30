@@ -55,7 +55,7 @@ const BUILD_APP_URL =
   '';
 
 const FALLBACK_APP_URLS = [
-  'https://omaha-cir-anime-simplified.trycloudflare.com',
+  'https://thankyouapp-production-a309.up.railway.app',
   'https://thankyouapp-production-a309.up.railway.app',
 ];
 
