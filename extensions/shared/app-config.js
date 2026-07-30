@@ -6,22 +6,37 @@
 const PROCESS_ENV =
   typeof process !== 'undefined' && process.env ? process.env : {};
 
+const GLOBAL_OBJECT =
+  typeof globalThis !== 'undefined'
+    ? /** @type {typeof globalThis & {
+        THANKYOU_APP_URL?: string,
+        PUBLIC_APP_URL?: string,
+        SHOPIFY_APP_URL?: string,
+        HOST?: string,
+        shopify?: {
+          appUrl?: string,
+          extension?: {appUrl?: string},
+          config?: {appUrl?: string},
+        },
+      }} */ (globalThis)
+    : {};
+
 const GLOBAL_ENV =
   typeof globalThis !== 'undefined'
     ? {
-        THANKYOU_APP_URL: globalThis.THANKYOU_APP_URL,
-        PUBLIC_APP_URL: globalThis.PUBLIC_APP_URL,
-        SHOPIFY_APP_URL: globalThis.SHOPIFY_APP_URL,
-        HOST: globalThis.HOST,
+        THANKYOU_APP_URL: GLOBAL_OBJECT.THANKYOU_APP_URL,
+        PUBLIC_APP_URL: GLOBAL_OBJECT.PUBLIC_APP_URL,
+        SHOPIFY_APP_URL: GLOBAL_OBJECT.SHOPIFY_APP_URL,
+        HOST: GLOBAL_OBJECT.HOST,
       }
     : {};
 
 const SHOPIFY_ENV =
-  typeof globalThis !== 'undefined' && globalThis.shopify
+  typeof globalThis !== 'undefined' && GLOBAL_OBJECT.shopify
     ? {
-        APP_URL: globalThis.shopify.appUrl,
-        EXTENSION_APP_URL: globalThis.shopify.extension?.appUrl,
-        CONFIG_APP_URL: globalThis.shopify.config?.appUrl,
+        APP_URL: GLOBAL_OBJECT.shopify.appUrl,
+        EXTENSION_APP_URL: GLOBAL_OBJECT.shopify.extension?.appUrl,
+        CONFIG_APP_URL: GLOBAL_OBJECT.shopify.config?.appUrl,
       }
     : {};
 
@@ -40,7 +55,7 @@ const BUILD_APP_URL =
   '';
 
 const FALLBACK_APP_URLS = [
-  'https://thankyouapp-production-a309.up.railway.app',
+  'https://omaha-cir-anime-simplified.trycloudflare.com',
   'https://thankyouapp-production-a309.up.railway.app',
 ];
 
@@ -58,8 +73,14 @@ function runtimeAppUrl() {
   try {
     // Extensions run in browser contexts; prefer explicit globals if present.
     if (typeof window !== 'undefined') {
-      if (window.THANKYOU_APP_URL) return window.THANKYOU_APP_URL;
-      if (window.PUBLIC_APP_URL) return window.PUBLIC_APP_URL;
+      const browserWindow =
+        /** @type {Window & typeof globalThis & {
+          THANKYOU_APP_URL?: string,
+          PUBLIC_APP_URL?: string,
+        }} */ (window);
+
+      if (browserWindow.THANKYOU_APP_URL) return browserWindow.THANKYOU_APP_URL;
+      if (browserWindow.PUBLIC_APP_URL) return browserWindow.PUBLIC_APP_URL;
     }
   } catch (e) {
     // ignore

@@ -1,0 +1,14 @@
+api_version = "2026-01"
+
+name = "Gift Options"
+type = "ui_extension"
+uid = "1058ceaa-8952-4f44-b817-075392ae52be"
+
+[[targeting]]
+module = "./src/index.jsx"
+target = "purchase.checkout.block.render"
+
+[capabilities]
+api_access = true
+network_access = true
+block_progress = true
