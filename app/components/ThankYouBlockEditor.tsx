@@ -305,6 +305,10 @@ export function ThankYouBlockEditor({
                   <LoyaltyFields config={config} />
                 ) : type === "checkoutUpsell" ? (
                   <CheckoutUpsellFields config={config} />
+                ) : type === "freeShippingProgress" ? (
+                  <FreeShippingProgressFields config={config} />
+                ) : type === "giftOptions" ? (
+                  <GiftOptionsFields config={config} />
                 ) : (
                   <UpsellFields config={config} />
                 )}
@@ -1012,6 +1016,106 @@ function LoyaltyFields({config}: {config: ThankYouBlockConfig}) {
   );
 }
 
+function FreeShippingProgressFields({config}: {config: ThankYouBlockConfig}) {
+  return (
+    <s-stack gap="base">
+      <TextField
+        label="Heading"
+        name="freeShippingHeading"
+        value={config.freeShippingHeading || "Free shipping"}
+        maxLength={80}
+        required
+      />
+      <TextField
+        label="Free shipping threshold"
+        name="freeShippingThreshold"
+        value={String(config.freeShippingThreshold || 100)}
+        type="number"
+        required
+      />
+      <TextField
+        label="Remaining amount message"
+        name="freeShippingRemainingMessage"
+        value={
+          config.freeShippingRemainingMessage ||
+          "You're {amount} away from free shipping."
+        }
+        maxLength={120}
+        required
+      />
+      <TextField
+        label="Success message"
+        name="freeShippingSuccessMessage"
+        value={
+          config.freeShippingSuccessMessage ||
+          "You've unlocked free shipping."
+        }
+        maxLength={120}
+        required
+      />
+      <s-box padding="base" borderWidth="base" borderRadius="base">
+        <s-text>
+          Use {"{amount}"} in the remaining message to show the live amount
+          left before the threshold.
+        </s-text>
+      </s-box>
+    </s-stack>
+  );
+}
+
+function GiftOptionsFields({config}: {config: ThankYouBlockConfig}) {
+  return (
+    <s-stack gap="base">
+      <TextField
+        label="Heading"
+        name="giftOptionsHeading"
+        value={config.giftOptionsHeading || "Gift options"}
+        maxLength={80}
+        required
+      />
+
+      <CheckboxField
+        label="Enable gift wrap"
+        name="giftWrapEnabled"
+        checked={config.giftWrapEnabled !== false}
+      />
+      <TextField
+        label="Gift wrap label"
+        name="giftWrapLabel"
+        value={config.giftWrapLabel || "Add gift wrap"}
+        maxLength={80}
+      />
+
+      <CheckboxField
+        label="Enable gift message"
+        name="giftMessageEnabled"
+        checked={config.giftMessageEnabled !== false}
+      />
+      <TextField
+        label="Gift message label"
+        name="giftMessageLabel"
+        value={config.giftMessageLabel || "Gift message"}
+        maxLength={80}
+      />
+      <TextField
+        label="Gift message placeholder"
+        name="giftMessagePlaceholder"
+        value={
+          config.giftMessagePlaceholder ||
+          "Write a message for the recipient"
+        }
+        maxLength={120}
+      />
+      <s-box padding="base" borderWidth="base" borderRadius="base">
+        <s-text>
+          Customer selections are saved as checkout attributes and appear on
+          the order details in Shopify.
+        </s-text>
+      </s-box>
+    </s-stack>
+  );
+}
+
 function TextField({
   label,
   name,
@@ -1038,6 +1142,8 @@ function TextField({
         defaultValue={value}
         id={name}
         maxLength={maxLength}
+        min={type === "number" ? "0" : undefined}
+        step={type === "number" ? "0.01" : undefined}
         name={name}
         placeholder={placeholder}
         required={required}
@@ -1045,6 +1151,30 @@ function TextField({
         type={type}
       />
     </div>
+  );
+}
+
+function CheckboxField({
+  label,
+  name,
+  checked,
+}: {
+  label: string;
+  name: string;
+  checked: boolean;
+}) {
+  return (
+    <label
+      style={{
+        alignItems: "center",
+        display: "flex",
+        gap: "10px",
+        fontWeight: 650,
+      }}
+    >
+      <input defaultChecked={checked} name={name} type="checkbox" />
+      {label}
+    </label>
   );
 }
 

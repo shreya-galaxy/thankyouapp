@@ -3,7 +3,10 @@ import {apiUrls} from './app-config';
 
 export async function fetchActiveBlock(type) {
   const extensionApi =
-    typeof globalThis !== 'undefined' ? globalThis.shopify : undefined;
+    typeof globalThis !== 'undefined'
+      ? /** @type {typeof globalThis & {shopify?: unknown}} */ (globalThis)
+          .shopify
+      : undefined;
   const shops = shopCandidates(extensionApi);
 
   if (!shops.length) {

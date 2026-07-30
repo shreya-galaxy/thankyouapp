@@ -1,0 +1,13 @@
+api_version = "2026-01"
+
+name = "Free Shipping Progress Bar"
+type = "ui_extension"
+uid = "ccdf1dad-e38c-439a-b207-5fcae847f28d"
+
+[[targeting]]
+module = "./src/index.jsx"
+target = "purchase.checkout.block.render"
+
+[capabilities]
+api_access = true
+network_access = true

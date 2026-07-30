@@ -203,6 +203,30 @@ function TemplatePreview({ type }: { type: string }) {
     upsell: "/upsell-preview.png",
     checkoutUpsell: "/checkout-upsell-preview.png",
   };
+  const fallbackPreviews: Record<string, string> = {
+    freeShippingProgress: "Free Shipping Progress Bar",
+    giftOptions: "Gift Options",
+  };
+
+  if (!previewImages[type]) {
+    return (
+      <div
+        style={{
+          alignItems: "center",
+          background: "#f6f6f7",
+          border: "1px solid #dfe3e8",
+          borderRadius: "8px",
+          display: "flex",
+          height: "140px",
+          justifyContent: "center",
+          padding: "16px",
+          textAlign: "center",
+        }}
+      >
+        <s-text type="strong">{fallbackPreviews[type] || type}</s-text>
+      </div>
+    );
+  }
 
   return (
     <div

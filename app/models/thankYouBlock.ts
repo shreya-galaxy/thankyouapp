@@ -5,6 +5,8 @@ export type ThankYouBlockType =
   | "media"
   | "upsell"
   | "checkoutUpsell"
+  | "freeShippingProgress"
+  | "giftOptions"
   | "referral"
   | "loyalty"
   | "discount"
@@ -58,6 +60,16 @@ export type ThankYouBlockConfig = {
   checkoutUpsellSource?: CheckoutUpsellSource;
   CheckoutUpsellSource?: CheckoutUpsellSource;
   checkoutUpsellMaxProducts?: number;
+  freeShippingHeading?: string;
+  freeShippingThreshold?: number;
+  freeShippingSuccessMessage?: string;
+  freeShippingRemainingMessage?: string;
+  giftOptionsHeading?: string;
+  giftWrapEnabled?: boolean;
+  giftMessageEnabled?: boolean;
+  giftWrapLabel?: string;
+  giftMessageLabel?: string;
+  giftMessagePlaceholder?: string;
   title?: string;
   description?: string;
   buttonText?: string;
@@ -138,6 +150,32 @@ export const blockTemplates = {
       checkoutUpsellMaxProducts: 4,
     },
   },
+  freeShippingProgress: {
+    type: "freeShippingProgress",
+    title: "Free Shipping Progress Bar",
+    description: "Show checkout progress toward a free shipping threshold.",
+    defaultName: "Free Shipping Progress Bar",
+    defaultConfig: {
+      freeShippingHeading: "Free shipping",
+      freeShippingThreshold: 100,
+      freeShippingRemainingMessage: "You're {amount} away from free shipping.",
+      freeShippingSuccessMessage: "You've unlocked free shipping.",
+    },
+  },
+  giftOptions: {
+    type: "giftOptions",
+    title: "Gift Options",
+    description: "Collect gift wrap and gift message choices in checkout.",
+    defaultName: "Gift Options",
+    defaultConfig: {
+      giftOptionsHeading: "Gift options",
+      giftWrapEnabled: true,
+      giftMessageEnabled: true,
+      giftWrapLabel: "Add gift wrap",
+      giftMessageLabel: "Gift message",
+      giftMessagePlaceholder: "Write a message for the recipient",
+    },
+  },
   discount: {
     type: "discount",
     title: "Discount Code",
@@ -204,6 +242,8 @@ export function isBlockType(value: unknown): value is ThankYouBlockType {
     value === "media" ||
     value === "upsell" ||
     value === "checkoutUpsell" ||
+    value === "freeShippingProgress" ||
+    value === "giftOptions" ||
     value === "referral" ||
     value === "loyalty" ||
     value === "discount" ||
@@ -301,6 +341,35 @@ export function configFromForm(
     };
   }
 
+  if (type === "freeShippingProgress") {
+    return {
+      freeShippingHeading: field(formData, "freeShippingHeading"),
+      freeShippingThreshold: positiveAmountFromForm(
+        formData,
+        "freeShippingThreshold",
+      ),
+      freeShippingRemainingMessage: field(
+        formData,
+        "freeShippingRemainingMessage",
+      ),
+      freeShippingSuccessMessage: field(
+        formData,
+        "freeShippingSuccessMessage",
+      ),
+    };
+  }
+
+  if (type === "giftOptions") {
+    return {
+      giftOptionsHeading: field(formData, "giftOptionsHeading"),
+      giftWrapEnabled: formData.get("giftWrapEnabled") === "on",
+      giftMessageEnabled: formData.get("giftMessageEnabled") === "on",
+      giftWrapLabel: field(formData, "giftWrapLabel"),
+      giftMessageLabel: field(formData, "giftMessageLabel"),
+      giftMessagePlaceholder: field(formData, "giftMessagePlaceholder"),
+    };
+  }
+
   return {
     upsellHeading: field(formData, "upsellHeading"),
     emptyMessage: field(formData, "emptyMessage"),
@@ -391,6 +460,45 @@ export function validateBlockForm(
     }
   }
 
+  if (type === "freeShippingProgress") {
+    requireText(errors, formData, "freeShippingHeading", "Heading");
+    requireText(
+      errors,
+      formData,
+      "freeShippingRemainingMessage",
+      "Remaining amount message",
+    );
+    requireText(
+      errors,
+      formData,
+      "freeShippingSuccessMessage",
+      "Success message",
+    );
+
+    if (positiveAmountFromForm(formData, "freeShippingThreshold") <= 0) {
+      errors.push("Free shipping threshold must be greater than 0.");
+    }
+  }
+
+  if (type === "giftOptions") {
+    const giftWrapEnabled = formData.get("giftWrapEnabled") === "on";
+    const giftMessageEnabled = formData.get("giftMessageEnabled") === "on";
+
+    requireText(errors, formData, "giftOptionsHeading", "Heading");
+
+    if (!giftWrapEnabled && !giftMessageEnabled) {
+      errors.push("Enable gift wrap, gift message, or both.");
+    }
+
+    if (giftWrapEnabled) {
+      requireText(errors, formData, "giftWrapLabel", "Gift wrap label");
+    }
+
+    if (giftMessageEnabled) {
+      requireText(errors, formData, "giftMessageLabel", "Gift message label");
+    }
+  }
+
   if (type === "upsell" || type === "checkoutUpsell") {
     productConditionsFromForm(formData).forEach((condition, index) => {
       if (condition.type !== "all" && !condition.values.length) {
@@ -410,6 +518,14 @@ export function field(formData: FormData, name: string) {
   const value = formData.get(name);
 
   return typeof value === "string" ? value.trim() : "";
+}
+
+function positiveAmountFromForm(formData: FormData, name: string) {
+  const value = Number(field(formData, name));
+
+  if (!Number.isFinite(value)) return 0;
+
+  return Math.max(0, value);
 }
 
 function requireText(
