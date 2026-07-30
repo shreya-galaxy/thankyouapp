@@ -61,7 +61,6 @@ export type ThankYouBlockConfig = {
   CheckoutUpsellSource?: CheckoutUpsellSource;
   checkoutUpsellMaxProducts?: number;
   freeShippingHeading?: string;
-  freeShippingThreshold?: number;
   freeShippingSuccessMessage?: string;
   freeShippingRemainingMessage?: string;
   giftOptionsHeading?: string;
@@ -157,7 +156,6 @@ export const blockTemplates = {
     defaultName: "Free Shipping Progress Bar",
     defaultConfig: {
       freeShippingHeading: "Free shipping",
-      freeShippingThreshold: 100,
       freeShippingRemainingMessage: "You're {amount} away from free shipping.",
       freeShippingSuccessMessage: "You've unlocked free shipping.",
     },
@@ -344,10 +342,6 @@ export function configFromForm(
   if (type === "freeShippingProgress") {
     return {
       freeShippingHeading: field(formData, "freeShippingHeading"),
-      freeShippingThreshold: positiveAmountFromForm(
-        formData,
-        "freeShippingThreshold",
-      ),
       freeShippingRemainingMessage: field(
         formData,
         "freeShippingRemainingMessage",
@@ -474,10 +468,6 @@ export function validateBlockForm(
       "freeShippingSuccessMessage",
       "Success message",
     );
-
-    if (positiveAmountFromForm(formData, "freeShippingThreshold") <= 0) {
-      errors.push("Free shipping threshold must be greater than 0.");
-    }
   }
 
   if (type === "giftOptions") {
@@ -518,14 +508,6 @@ export function field(formData: FormData, name: string) {
   const value = formData.get(name);
 
   return typeof value === "string" ? value.trim() : "";
-}
-
-function positiveAmountFromForm(formData: FormData, name: string) {
-  const value = Number(field(formData, name));
-
-  if (!Number.isFinite(value)) return 0;
-
-  return Math.max(0, value);
 }
 
 function requireText(

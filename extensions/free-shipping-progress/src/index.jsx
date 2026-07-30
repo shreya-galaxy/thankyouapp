@@ -60,11 +60,7 @@ function Extension() {
 
   const currentAmount = Math.max(0, Number(subtotal?.amount) || 0);
   const shippingAmount = Number(totalShipping?.amount);
-  const fallbackThreshold = Number(config?.freeShippingThreshold);
-  const threshold =
-    Number.isFinite(shippingAmount) && shippingAmount >= 0
-      ? shippingAmount
-      : fallbackThreshold;
+  const threshold = shippingAmount;
 
   if (!Number.isFinite(threshold) || threshold < 0) return null;
 

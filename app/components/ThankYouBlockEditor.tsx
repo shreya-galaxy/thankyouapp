@@ -1027,13 +1027,6 @@ function FreeShippingProgressFields({config}: {config: ThankYouBlockConfig}) {
         required
       />
       <TextField
-        label="Free shipping threshold"
-        name="freeShippingThreshold"
-        value={String(config.freeShippingThreshold || 100)}
-        type="number"
-        required
-      />
-      <TextField
         label="Remaining amount message"
         name="freeShippingRemainingMessage"
         value={
@@ -1056,7 +1049,7 @@ function FreeShippingProgressFields({config}: {config: ThankYouBlockConfig}) {
       <s-box padding="base" borderWidth="base" borderRadius="base">
         <s-text>
           Use {"{amount}"} in the remaining message to show the live amount
-          left before the threshold.
+          left before the checkout shipping amount.
         </s-text>
       </s-box>
     </s-stack>
