@@ -20,7 +20,9 @@ export default () => {
 function Extension() {
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
-  const subtotal = useSignalValue(extensionApi()?.cost?.subtotalAmount);
+  const api = extensionApi();
+  const subtotal = useSignalValue(api?.cost?.subtotalAmount);
+  const totalShipping = useSignalValue(api?.cost?.totalShippingAmount);
 
   useEffect(() => {
     let mounted = true;
@@ -54,14 +56,24 @@ function Extension() {
     );
   }
 
-  const threshold = Number(config?.freeShippingThreshold);
-
-  if (!config || !Number.isFinite(threshold) || threshold <= 0) return null;
+  if (!config) return null;
 
   const currentAmount = Math.max(0, Number(subtotal?.amount) || 0);
-  const currencyCode = subtotal?.currencyCode || '';
+  const shippingAmount = Number(totalShipping?.amount);
+  const fallbackThreshold = Number(config?.freeShippingThreshold);
+  const threshold =
+    Number.isFinite(shippingAmount) && shippingAmount >= 0
+      ? shippingAmount
+      : fallbackThreshold;
+
+  if (!Number.isFinite(threshold) || threshold < 0) return null;
+
+  const currencyCode = totalShipping?.currencyCode || subtotal?.currencyCode || '';
   const remaining = Math.max(0, threshold - currentAmount);
-  const progress = Math.max(0, Math.min(100, (currentAmount / threshold) * 100));
+  const progress =
+    threshold > 0
+      ? Math.max(0, Math.min(100, (currentAmount / threshold) * 100))
+      : 100;
   const amount = formatMoney({amount: remaining, currencyCode});
   const heading = limitText(
     trimText(config.freeShippingHeading) || 'Free shipping',
